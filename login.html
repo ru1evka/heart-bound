@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход — Админ-панель</title>
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Manrope', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #2a1a2e 0%, #4a2d4f 50%, #1a0f1e 100%);
+            padding: 20px;
+        }
+        .login-box {
+            background: #fdf6f0;
+            border-radius: 20px;
+            padding: 50px 40px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 30px 60px rgba(0,0,0,.4);
+            text-align: center;
+        }
+        .login-box__icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: #9a3f55;
+        }
+        .login-box h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2a1a2e;
+            margin-bottom: 8px;
+        }
+        .login-box p {
+            color: #6a5a6e;
+            font-size: 14px;
+            margin-bottom: 32px;
+        }
+        .form-group {
+            margin-bottom: 18px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: #6a5a6e;
+            margin-bottom: 6px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1.5px solid #e8e0dc;
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: inherit;
+            color: #2a1a2e;
+            background: #fff;
+            transition: border-color .2s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #9a3f55;
+        }
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 50px;
+            background: #9a3f55;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all .25s;
+            margin-top: 8px;
+        }
+        .btn:hover { background: #2a1a2e; transform: translateY(-1px); }
+        .error {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 14px;
+            display: none;
+        }
+        .error.show { display: block; }
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #9a3f55;
+            font-size: 14px;
+            text-decoration: none;
+            border-bottom: 1px dashed #9a3f55;
+        }
+        .back-link:hover { color: #2a1a2e; border-color: #2a1a2e; }
+    </style>
+</head>
+<body>
+
+<div class="login-box">
+    <div class="login-box__icon">❦</div>
+    <h1>Вход в админ-панель</h1>
+    <p>Введите логин и пароль для доступа к управлению сайтом</p>
+
+    <form id="loginForm">
+        <div class="form-group">
+            <label for="login">Логин</label>
+            <input type="text" id="login" name="login" autocomplete="username" required autofocus>
+        </div>
+        <div class="form-group">
+            <label for="password">Пароль</label>
+            <input type="password" id="password" name="password" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="btn">Войти</button>
+        <p class="error" id="error">Неверный логин или пароль</p>
+    </form>
+
+    <a href="/" class="back-link">← Вернуться на сайт</a>
+</div>
+
+<script>
+document.getElementById('loginForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const login = document.getElementById('login').value.trim();
+    const password = document.getElementById('password').value;
+    const errorEl = document.getElementById('error');
+    errorEl.classList.remove('show');
+
+    try {
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ login, password })
+        });
+        const data = await res.json();
+        if (data.success) {
+            // Токен уже в cookie, перезагружаем страницу — теперь покажется admin.html
+            window.location.href = '/admin.html';
+        } else {
+            errorEl.textContent = data.error || 'Неверный логин или пароль';
+            errorEl.classList.add('show');
+        }
+    } catch (err) {
+        errorEl.textContent = 'Ошибка соединения с сервером';
+        errorEl.classList.add('show');
+    }
+});
+</script>
+</body>
+</html>

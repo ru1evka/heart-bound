@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a2440"/>
+      <stop offset="1" stop-color="#5a3050"/>
+    </linearGradient>
+    <radialGradient id="glow1" cx="50%" cy="35%" r="50%">
+      <stop offset="0" stop-color="#fff" stop-opacity=".25"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="600" height="800" fill="url(#g1)"/>
+  <rect width="600" height="800" fill="url(#glow1)"/>
+  <!-- снежинки -->
+  <g fill="#fff" opacity=".75">
+    <circle cx="80" cy="120" r="2.5"><animate attributeName="cy" from="-20" to="820" dur="9s" repeatCount="indefinite"/></circle>
+    <circle cx="180" cy="60" r="1.8"><animate attributeName="cy" from="-20" to="820" dur="11s" repeatCount="indefinite"/></circle>
+    <circle cx="280" cy="200" r="3"><animate attributeName="cy" from="-20" to="820" dur="13s" repeatCount="indefinite"/></circle>
+    <circle cx="380" cy="40" r="2"><animate attributeName="cy" from="-20" to="820" dur="10s" repeatCount="indefinite"/></circle>
+    <circle cx="460" cy="160" r="2.4"><animate attributeName="cy" from="-20" to="820" dur="12s" repeatCount="indefinite"/></circle>
+    <circle cx="540" cy="80" r="1.5"><animate attributeName="cy" from="-20" to="820" dur="8s" repeatCount="indefinite"/></circle>
+    <circle cx="120" cy="300" r="2"><animate attributeName="cy" from="-20" to="820" dur="14s" repeatCount="indefinite"/></circle>
+    <circle cx="500" cy="350" r="2.2"><animate attributeName="cy" from="-20" to="820" dur="15s" repeatCount="indefinite"/></circle>
+  </g>
+  <!-- роза -->
+  <g transform="translate(300 480)">
+    <g>
+      <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="40s" repeatCount="indefinite"/>
+      <path d="M0 -90 C50 -60 70 -10 30 30 C70 -10 30 60 0 30 C-30 60 -70 -10 -30 30 C-70 -10 -50 -60 0 -90Z" fill="#c46a7c" opacity=".9"/>
+      <path d="M0 -50 C25 -30 35 -5 15 15 C35 -5 15 30 0 15 C-15 30 -35 -5 -15 15 C-35 -5 -25 -30 0 -50Z" fill="#9a3f55"/>
+      <circle r="10" fill="#5d1a2c"/>
+    </g>
+  </g>
+  <text x="300" y="700" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="36" fill="#fff" opacity=".9">Шёпот зимних роз</text>
+  <text x="300" y="740" text-anchor="middle" font-family="Arial" font-size="14" letter-spacing="4" fill="#c9a86a">АННА ВЕРЕСЕНЬ</text>
+</svg>

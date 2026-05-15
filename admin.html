@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ-панель — Сердце в переплёте</title>
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<div class="admin">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar__logo">
+            <span>❦</span> Админ-панель
+        </div>
+        <nav class="sidebar__nav">
+            <button class="sidebar__link is-active" data-tab="books">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+                Книги
+            </button>
+            <button class="sidebar__link" data-tab="blog">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                Блог
+            </button>
+            <a href="index.html" class="sidebar__link sidebar__link--back">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                На сайт
+            </a>
+            <button class="sidebar__link sidebar__link--logout" id="logoutBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+                Выйти
+            </button>
+        </nav>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main">
+
+        <!-- ===== Книги ===== -->
+        <section class="tab-panel is-active" id="tab-books">
+            <div class="panel-header">
+                <h1>Управление книгами</h1>
+                <button class="btn btn--primary" id="addBookBtn">+ Добавить книгу</button>
+            </div>
+
+            <div class="cards-list" id="booksList">
+                <!-- Карточки книг рендерятся из JS -->
+            </div>
+        </section>
+
+        <!-- ===== Блог ===== -->
+        <section class="tab-panel" id="tab-blog">
+            <div class="panel-header">
+                <h1>Управление блогом</h1>
+                <button class="btn btn--primary" id="addPostBtn">+ Добавить запись</button>
+            </div>
+
+            <div class="cards-list" id="postsList">
+                <!-- Карточки постов рендерятся из JS -->
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- ===== Модалка: Книга ===== -->
+<div class="modal-overlay" id="bookModal">
+    <div class="modal-box">
+        <div class="modal-box__header">
+            <h2 id="bookModalTitle">Добавить книгу</h2>
+            <button class="modal-box__close" data-close-modal="bookModal">×</button>
+        </div>
+        <form id="bookForm" class="form">
+            <input type="hidden" id="bookId">
+            <div class="form__group">
+                <label for="bookTitle">Название</label>
+                <input type="text" id="bookTitle" placeholder="Шёпот зимних роз" required>
+            </div>
+            <div class="form__row">
+                <div class="form__group">
+                    <label for="bookGenre">Жанр</label>
+                    <input type="text" id="bookGenre" placeholder="Современный роман · Драма">
+                </div>
+                <div class="form__group">
+                    <label for="bookBadge">Бейдж</label>
+                    <select id="bookBadge">
+                        <option value="">Без бейджа</option>
+                        <option value="Новинка">Новинка</option>
+                        <option value="Бестселлер">Бестселлер</option>
+                        <option value="Скоро">Скоро</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form__group">
+                <label for="bookDesc">Краткое описание</label>
+                <input type="text" id="bookDesc" placeholder="Она искала тишину...">
+            </div>
+            <div class="form__group">
+                <label for="bookPrologue">Текст пролога</label>
+                <textarea id="bookPrologue" rows="8" placeholder="Снег падал так тихо..."></textarea>
+            </div>
+            <div class="form__row">
+                <div class="form__group">
+                    <label for="bookLitnet">Ссылка Литнет</label>
+                    <input type="url" id="bookLitnet" placeholder="https://litnet.com/...">
+                </div>
+                <div class="form__group">
+                    <label for="bookLitgorod">Ссылка ЛитГород</label>
+                    <input type="url" id="bookLitgorod" placeholder="https://litgorod.ru/...">
+                </div>
+            </div>
+            <div class="form__group">
+                <label for="bookCover">Обложка (URL изображения, gif или mp4)</label>
+                <input type="text" id="bookCover" placeholder="assets/book1.mp4 или https://...">
+            </div>
+            <div class="form__group">
+                <label for="bookColor">Цвет фона обложки (если нет файла)</label>
+                <input type="color" id="bookColor" value="#9a3f55">
+            </div>
+            <div class="form__actions">
+                <button type="button" class="btn btn--ghost" data-close-modal="bookModal">Отмена</button>
+                <button type="submit" class="btn btn--primary">Сохранить</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ===== Модалка: Блог ===== -->
+<div class="modal-overlay" id="postModal">
+    <div class="modal-box">
+        <div class="modal-box__header">
+            <h2 id="postModalTitle">Добавить запись</h2>
+            <button class="modal-box__close" data-close-modal="postModal">×</button>
+        </div>
+        <form id="postForm" class="form">
+            <input type="hidden" id="postId">
+            <div class="form__group">
+                <label for="postTitle">Заголовок</label>
+                <input type="text" id="postTitle" placeholder="Как рождалась героиня..." required>
+            </div>
+            <div class="form__group">
+                <label for="postDate">Дата</label>
+                <input type="date" id="postDate">
+            </div>
+            <div class="form__group">
+                <label for="postContent">Текст записи</label>
+                <textarea id="postContent" rows="6" placeholder="Иногда персонаж сам стучится в дверь..."></textarea>
+            </div>
+            <div class="form__group">
+                <label for="postLink">Ссылка «Читать далее» (необязательно)</label>
+                <input type="text" id="postLink" placeholder="#">
+            </div>
+            <div class="form__actions">
+                <button type="button" class="btn btn--ghost" data-close-modal="postModal">Отмена</button>
+                <button type="submit" class="btn btn--primary">Сохранить</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="admin.js"></script>
+</body>
+</html>

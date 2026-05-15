@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сердце в переплёте — любовные романы</title>
+    <meta name="description" content="Авторские любовные романы. Читайте пролог бесплатно, продолжение — на Литнет и ЛитГород.">
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ===== Шапка ===== -->
+<header class="header">
+    <div class="container header__inner">
+        <a href="#" class="logo">
+            <span class="logo__icon">❦</span>
+            <span class="logo__text">Сердце<br><em>в переплёте</em></span>
+        </a>
+        <nav class="nav">
+            <a href="#books">Книги</a>
+            <a href="#about">Автор</a>
+            <a href="#blog">Блог</a>
+            <a href="#contacts">Контакты</a>
+        </nav>
+        <button class="burger" aria-label="Меню" id="burger">
+            <span></span><span></span><span></span>
+        </button>
+    </div>
+</header>
+
+<!-- ===== Hero ===== -->
+<section class="hero">
+    <div class="hero__bg"></div>
+    <div class="container hero__inner">
+        <p class="hero__eyebrow">— авторские любовные романы —</p>
+        <h1 class="hero__title">Истории, от которых<br><span>замирает сердце</span></h1>
+        <p class="hero__lead">Прочтите пролог бесплатно прямо здесь. Полные версии романов ждут вас на платформах <strong>Литнет</strong> и <strong>ЛитГород</strong>.</p>
+        <div class="hero__btns">
+            <a href="#books" class="btn btn--primary">Открыть библиотеку</a>
+            <a href="#blog" class="btn btn--ghost">Читать блог</a>
+        </div>
+        <div class="hero__petals" aria-hidden="true">
+            <span>❀</span><span>❀</span><span>❀</span><span>❀</span><span>❀</span><span>❀</span><span>❀</span>
+        </div>
+    </div>
+</section>
+
+<!-- ===== Книги ===== -->
+<section class="books" id="books">
+    <div class="container">
+        <div class="section-head">
+            <p class="section-head__eyebrow">— коллекция —</p>
+            <h2 class="section-head__title">Романы, которые согревают</h2>
+            <p class="section-head__lead">Наведите на обложку — она оживёт. Откройте книгу, чтобы прочитать пролог.</p>
+        </div>
+
+        <div class="book-grid">
+            <!-- Карточки книг рендерятся динамически из script.js -->
+        </div>
+    </div>
+</section>
+
+<!-- ===== Об авторе ===== -->
+<section class="about" id="about">
+    <div class="container about__inner">
+        <div class="about__photo">
+            <div class="about__photo-frame">
+                <img src="assets/author.jpg" alt="Автор" onerror="this.style.display='none'">
+                <div class="about__photo-fallback">A</div>
+            </div>
+        </div>
+        <div class="about__text">
+            <p class="section-head__eyebrow">— об авторе —</p>
+            <h2 class="section-head__title">Анна Вересень</h2>
+            <p>Я пишу о том, что чувствую: о случайных взглядах, о словах, которые не успели прозвучать, о любви, которая сильнее обстоятельств.</p>
+            <p>Мои героини — настоящие. Они ошибаются, любят, ждут. И находят. В каждой книге — частичка меня и, возможно, частичка вас.</p>
+            <a href="#books" class="btn btn--ghost">Мои книги</a>
+        </div>
+    </div>
+</section>
+
+<!-- ===== Блог ===== -->
+<section class="blog" id="blog">
+    <div class="container">
+        <div class="section-head">
+            <p class="section-head__eyebrow">— блог —</p>
+            <h2 class="section-head__title">Дневник вдохновений</h2>
+            <p class="section-head__lead">Заметки о книгах, музе и закулисье романов.</p>
+        </div>
+
+        <div class="blog-grid">
+            <!-- Записи блога рендерятся динамически из script.js -->
+        </div>
+
+        <!-- Соцсети -->
+        <div class="socials">
+            <p class="socials__title">Я в социальных сетях</p>
+            <div class="socials__row">
+                <a href="#" class="social social--tg" aria-label="Telegram">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.5 4.5L2.5 12l5.5 1.8L17 7.5 9.5 14l-.3 4.5 3-2.7 4.5 3.4z"/></svg>
+                    <span>Telegram</span>
+                </a>
+                <a href="#" class="social social--vk" aria-label="ВКонтакте">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.7 17h1.2c.4 0 .6-.2.6-.6 0-.7.4-1.3 1-1.3.7 0 1.5 1.6 2.4 2 .3.1.7-.1.8-.5l.4-1.4c.1-.4-.1-.7-.5-.8l-2-.9c-.6-.3-.5-.7 0-1.4 1.2-1.6 2.5-3.4 2-3.9-.3-.3-1.7-.2-3.2-.2-.4 0-.7.2-.9.6-.7 1.5-2 3.4-2.5 3.4-.5 0-.6-2.4-.6-3.4 0-.4-.4-.6-.7-.6H7.6c-.4 0-.7.3-.7.6 0 1.4 1.6 2 1.6 4.2 0 1-.2 1.7-.7 1.7-1 0-2.3-2.5-3-4.6-.1-.3-.4-.6-.8-.6H2c-.4 0-.7.3-.6.7C2.5 13 6 17 12.7 17z"/></svg>
+                    <span>ВКонтакте</span>
+                </a>
+                <a href="#" class="social social--inst" aria-label="Instagram">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
+                    <span>Instagram</span>
+                </a>
+                <a href="#" class="social social--yt" aria-label="YouTube">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 7s-.2-1.5-.9-2.2c-.8-.8-1.7-.8-2.1-.9C16.9 3.6 12 3.6 12 3.6s-4.9 0-8 .3c-.4.1-1.3.1-2.1.9C1.2 5.5 1 7 1 7S.7 8.8.7 10.5v1.5c0 1.7.3 3.5.3 3.5s.2 1.5.9 2.2c.8.8 1.9.8 2.4.9 1.7.2 7.7.3 7.7.3s4.9 0 8-.3c.4-.1 1.3-.1 2.1-.9.7-.7.9-2.2.9-2.2s.3-1.8.3-3.5v-1.5C23.3 8.8 23 7 23 7zM9.7 14.5V8.4l6.4 3.1-6.4 3z"/></svg>
+                    <span>YouTube</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Telegram QR -->
+        <div class="tg-qr" id="contacts">
+            <div class="tg-qr__text">
+                <p class="section-head__eyebrow">— подпишись —</p>
+                <h3>Закрытый клуб читателей в Telegram</h3>
+                <p>Анонсы новых глав, бонусные сцены, голосования за поворот сюжета и душевные встречи. Отсканируйте код — и присоединяйтесь.</p>
+                <a href="https://t.me/" class="btn btn--primary" target="_blank" rel="noopener">Открыть в Telegram</a>
+            </div>
+            <div class="tg-qr__code">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=https://t.me/&color=2a1a2e&bgcolor=fdf6f0&margin=2" alt="QR-код Telegram" loading="lazy">
+                <p>@heart_in_book</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== Footer ===== -->
+<footer class="footer">
+    <div class="container footer__inner">
+        <div class="footer__col">
+            <a href="#" class="logo logo--light">
+                <span class="logo__icon">❦</span>
+                <span class="logo__text">Сердце<br><em>в переплёте</em></span>
+            </a>
+            <p>Любовные романы, которые остаются с вами надолго.</p>
+        </div>
+        <div class="footer__col">
+            <h4>Платформы</h4>
+            <a href="https://litnet.com" target="_blank" rel="noopener">Литнет</a>
+            <a href="https://litgorod.ru" target="_blank" rel="noopener">ЛитГород</a>
+        </div>
+        <div class="footer__col">
+            <h4>Меню</h4>
+            <a href="#books">Книги</a>
+            <a href="#about">Автор</a>
+            <a href="#blog">Блог</a>
+        </div>
+        <div class="footer__col">
+            <h4>Связь</h4>
+            <a href="mailto:hello@heart-book.ru">hello@heart-book.ru</a>
+            <a href="#contacts">Telegram-канал</a>
+        </div>
+    </div>
+    <div class="footer__bottom">
+        © 2026 Сердце в переплёте · Все права защищены
+        <!-- Скрытая ссылка на админку: /admin.html -->
+    </div>
+</footer>
+
+<!-- ===== Модальное окно с прологом ===== -->
+<div class="modal" id="modal" aria-hidden="true">
+    <div class="modal__backdrop" data-close></div>
+    <div class="modal__dialog" role="dialog" aria-modal="true">
+        <button class="modal__close" data-close aria-label="Закрыть">×</button>
+        <div class="modal__cover">
+            <video class="modal__media" autoplay muted loop playsinline id="modalMedia"></video>
+            <img class="modal__fallback" id="modalFallback" alt="">
+        </div>
+        <div class="modal__body">
+            <p class="modal__genre" id="modalGenre"></p>
+            <h2 id="modalTitle"></h2>
+            <h3 class="modal__prologue-title">Пролог</h3>
+            <div class="modal__prologue" id="modalPrologue"></div>
+            <div class="modal__buy">
+                <p>Продолжение читайте на платформах:</p>
+                <div class="modal__buy-row">
+                    <a href="https://litnet.com" target="_blank" rel="noopener" class="btn btn--primary" id="linkLitnet">Купить на Литнет</a>
+                    <a href="https://litgorod.ru" target="_blank" rel="noopener" class="btn btn--ghost" id="linkLitgorod">Купить на ЛитГород</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Модальное окно поста ===== -->
+<div class="modal" id="postModalView" aria-hidden="true">
+    <div class="modal__backdrop" data-close></div>
+    <div class="modal__dialog modal__dialog--post" role="dialog" aria-modal="true">
+        <button class="modal__close" data-close aria-label="Закрыть">×</button>
+        <div class="modal__body">
+            <p class="modal__genre" id="postViewDate"></p>
+            <h2 id="postViewTitle"></h2>
+            <div class="modal__prologue" id="postViewContent"></div>
+        </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

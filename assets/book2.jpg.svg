@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff8a5b"/>
+      <stop offset=".5" stop-color="#c46a7c"/>
+      <stop offset="1" stop-color="#3a2548"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="800" fill="url(#g2)"/>
+  <!-- солнце -->
+  <circle cx="300" cy="350" r="90" fill="#ffd9a0" opacity=".95">
+    <animate attributeName="r" values="90;95;90" dur="4s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="300" cy="350" r="110" fill="none" stroke="#ffd9a0" stroke-width="2" opacity=".4">
+    <animate attributeName="r" values="110;130;110" dur="4s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values=".4;0;.4" dur="4s" repeatCount="indefinite"/>
+  </circle>
+  <!-- море -->
+  <path d="M0 500 Q150 480 300 500 T600 500 L600 800 L0 800Z" fill="#2a4a6a" opacity=".7"/>
+  <path d="M0 540 Q150 520 300 540 T600 540 L600 800 L0 800Z" fill="#1a3050" opacity=".8">
+    <animate attributeName="d" values="M0 540 Q150 520 300 540 T600 540 L600 800 L0 800Z;M0 540 Q150 560 300 540 T600 540 L600 800 L0 800Z;M0 540 Q150 520 300 540 T600 540 L600 800 L0 800Z" dur="6s" repeatCount="indefinite"/>
+  </path>
+  <!-- звезды -->
+  <g fill="#fff">
+    <circle cx="100" cy="100" r="1.5"><animate attributeName="opacity" values="0;1;0" dur="3s" repeatCount="indefinite"/></circle>
+    <circle cx="500" cy="80" r="2"><animate attributeName="opacity" values="0;1;0" dur="4s" repeatCount="indefinite"/></circle>
+    <circle cx="200" cy="50" r="1"><animate attributeName="opacity" values="0;1;0" dur="2.5s" repeatCount="indefinite"/></circle>
+    <circle cx="400" cy="150" r="1.2"><animate attributeName="opacity" values="0;1;0" dur="3.5s" repeatCount="indefinite"/></circle>
+  </g>
+  <text x="300" y="700" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="32" fill="#fff">Под светом</text>
+  <text x="300" y="740" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="32" fill="#fff">южных звёзд</text>
+  <text x="300" y="775" text-anchor="middle" font-family="Arial" font-size="13" letter-spacing="4" fill="#ffd9a0">АННА ВЕРЕСЕНЬ</text>
+</svg>

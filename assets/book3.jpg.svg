@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="g3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a2818"/>
+      <stop offset="1" stop-color="#1a0f0a"/>
+    </linearGradient>
+    <pattern id="paper" width="6" height="6" patternUnits="userSpaceOnUse">
+      <rect width="6" height="6" fill="#3a2818"/>
+      <circle cx="2" cy="2" r=".4" fill="#5a4030" opacity=".4"/>
+    </pattern>
+  </defs>
+  <rect width="600" height="800" fill="url(#g3)"/>
+  <rect width="600" height="800" fill="url(#paper)" opacity=".5"/>
+  <!-- письмо -->
+  <g transform="translate(300 380)">
+    <g>
+      <animateTransform attributeName="transform" type="rotate" values="-3;3;-3" dur="6s" repeatCount="indefinite"/>
+      <rect x="-160" y="-110" width="320" height="220" fill="#f4e4c8" stroke="#c9a86a" stroke-width="2"/>
+      <line x1="-130" y1="-70" x2="130" y2="-70" stroke="#8a6840" stroke-width="1"/>
+      <line x1="-130" y1="-40" x2="100" y2="-40" stroke="#8a6840" stroke-width="1"/>
+      <line x1="-130" y1="-10" x2="120" y2="-10" stroke="#8a6840" stroke-width="1"/>
+      <line x1="-130" y1="20" x2="80" y2="20" stroke="#8a6840" stroke-width="1"/>
+      <line x1="-130" y1="50" x2="110" y2="50" stroke="#8a6840" stroke-width="1"/>
+      <text x="0" y="92" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="18" fill="#9a3f55">с любовью...</text>
+    </g>
+  </g>
+  <!-- сургучная печать -->
+  <g transform="translate(420 480)">
+    <circle r="32" fill="#9a3f55"/>
+    <circle r="32" fill="#9a3f55">
+      <animate attributeName="r" values="32;36;32" dur="3s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values=".5;0;.5" dur="3s" repeatCount="indefinite"/>
+    </circle>
+    <text y="6" text-anchor="middle" font-family="Georgia" font-style="italic" font-size="22" fill="#f4e4c8">A</text>
+  </g>
+  <text x="300" y="680" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="32" fill="#f4e4c8">Письма,</text>
+  <text x="300" y="720" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="32" fill="#f4e4c8">которых не было</text>
+  <text x="300" y="755" text-anchor="middle" font-family="Arial" font-size="13" letter-spacing="4" fill="#c9a86a">АННА ВЕРЕСЕНЬ</text>
+</svg>

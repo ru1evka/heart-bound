@@ -1,0 +1,20 @@
+{
+  "name": "siteboock",
+  "version": "1.0.0",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "description": "```\r siteboock/\r ├── index.html          — главная страница\r ├── style.css           — стили\r ├── script.js           — логика (модалка, бургер, анимации)\r ├── README.md           — этот файл\r └── assets/\r     ├── favicon.svg     — иконка сайта\r     ├── book1.jpg.svg   — анимированная обложка «Шёпот зимних роз»\r     ├── book2.jpg.svg   — анимированная обложка «Под светом южных звёзд»\r     ├── book3.jpg.svg   — анимированная обложка «Письма, которых не было»\r     ├── book4.jpg.svg   — анимированная обложка «Танец на грани рассвета»\r     ├── book1.mp4       — (опционально) видео-обложка книги 1\r     ├── book2.mp4       — (опционально) видео-обложка книги 2\r     ├── book3.mp4       — (опционально) видео-обложка книги 3\r     ├── book4.mp4       — (опционально) видео-обложка книги 4\r     └── author.jpg      — (опционально) фото автора\r ```",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.2",
+    "sql.js": "^1.11.0"
+  }
+}
