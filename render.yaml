@@ -5,10 +5,13 @@ services:
     plan: free
     buildCommand: npm install
     startCommand: node server.js
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
       - key: ADMIN_LOGIN
         sync: false
       - key: ADMIN_PASSWORD
+        sync: false
+      - key: RENDER_EXTERNAL_URL
         sync: false

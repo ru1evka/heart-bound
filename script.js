@@ -1,27 +1,37 @@
-// ===== Загрузка данных из API =====
+// ===== Загрузка данных из API с retry =====
 let booksData = [];
 let postsData = [];
 
-async function loadBooks() {
-    try {
-        const res = await fetch('/api/books');
-        booksData = await res.json();
-    } catch (e) {
-        console.warn('Не удалось загрузить книги из API, используем пустой массив');
-        booksData = [];
+async function fetchWithRetry(url, retries = 3, delay = 1500) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const res = await fetch(url);
+            if (res.status === 503) {
+                // Сервер ещё запускается
+                await new Promise(r => setTimeout(r, delay));
+                continue;
+            }
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return await res.json();
+        } catch (e) {
+            if (i < retries - 1) {
+                await new Promise(r => setTimeout(r, delay));
+            }
+        }
     }
+    return null;
+}
+
+async function loadBooks() {
+    const data = await fetchWithRetry('/api/books');
+    booksData = data || [];
     renderBookCards();
     observeAnimated();
 }
 
 async function loadPosts() {
-    try {
-        const res = await fetch('/api/posts');
-        postsData = await res.json();
-    } catch (e) {
-        console.warn('Не удалось загрузить посты из API, используем пустой массив');
-        postsData = [];
-    }
+    const data = await fetchWithRetry('/api/posts');
+    postsData = data || [];
     renderBlogPosts();
     observeAnimated();
 }
