@@ -49,6 +49,7 @@ async function loadSettings() {
     renderSocials();
     renderTgQr();
     renderFooterLinks();
+    renderAuthor();
 }
 
 // ===== Динамический рендер книг с пагинацией =====
@@ -314,9 +315,9 @@ function renderTgQr() {
 // ===== Рендер футера из настроек =====
 function renderFooterLinks() {
     // Платформы в футере
-    const footerCols = document.querySelectorAll('.footer__col');
-    footerCols.forEach(col => {
-        const links = col.querySelectorAll('a[target="_blank"]');
+    const platformsCol = document.getElementById('footerPlatforms');
+    if (platformsCol) {
+        const links = platformsCol.querySelectorAll('a');
         links.forEach(link => {
             if (link.textContent.includes('Литнет') && siteSettings.platform_litnet) {
                 link.href = siteSettings.platform_litnet;
@@ -325,7 +326,17 @@ function renderFooterLinks() {
                 link.href = siteSettings.platform_litgorod;
             }
         });
-    });
+        // Литрес
+        const litresLink = document.getElementById('footerLitres');
+        if (litresLink) {
+            if (siteSettings.platform_litres) {
+                litresLink.href = siteSettings.platform_litres;
+                litresLink.style.display = '';
+            } else {
+                litresLink.style.display = 'none';
+            }
+        }
+    }
 
     // Блок «Связь» — рендерим динамически из соцсетей
     const contactCol = document.getElementById('footerContact');
@@ -355,6 +366,19 @@ function renderFooterLinks() {
     });
 
     contactCol.innerHTML = html;
+}
+
+// ===== Рендер блока «Об авторе» =====
+function renderAuthor() {
+    const nameEl = document.getElementById('authorName');
+    const text1El = document.getElementById('authorText1');
+    const text2El = document.getElementById('authorText2');
+    const photoEl = document.getElementById('authorPhoto');
+
+    if (nameEl && siteSettings.author_name) nameEl.textContent = siteSettings.author_name;
+    if (text1El && siteSettings.author_text1) text1El.textContent = siteSettings.author_text1;
+    if (text2El && siteSettings.author_text2) text2El.textContent = siteSettings.author_text2;
+    if (photoEl && siteSettings.author_photo) photoEl.src = siteSettings.author_photo;
 }
 
 // ===== Плавное появление при скролле =====

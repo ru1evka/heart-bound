@@ -272,7 +272,7 @@ h1, h2, h3, h4 {
 }
 .book-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 36px;
 }
 .book-card {
@@ -686,6 +686,7 @@ body.no-scroll { overflow: hidden; }
 
 /* ===== Адаптив ===== */
 @media (max-width: 900px) {
+    .book-grid { grid-template-columns: repeat(2, 1fr); }
     .nav { display: none; position: fixed; top: 70px; left: 0; right: 0; flex-direction: column; background: var(--bg); padding: 30px; gap: 20px; border-bottom: 1px solid var(--line); }
     .nav.is-open { display: flex; }
     .burger { display: flex; }

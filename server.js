@@ -109,8 +109,11 @@ async function initDB() {
 
         // Миграция: добавляем колонку litres если её нет
         try { db.run(`ALTER TABLE books ADD COLUMN litres TEXT DEFAULT ''`); } catch (e) { /* уже есть */ }
-        // Миграция: добавляем social_dzen если нет
-        try { db.run(`INSERT OR IGNORE INTO settings (key, value) VALUES ('social_dzen', '')`); } catch (e) { /* ok */ }
+        // Миграция: добавляем новые настройки если нет
+        const newSettings = ['social_dzen', 'platform_litres', 'author_name', 'author_text1', 'author_text2', 'author_photo'];
+        newSettings.forEach(key => {
+            try { db.run(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, '')`, [key]); } catch (e) { /* ok */ }
+        });
 
         // Заполняем дефолтными данными если пусто
         const bookCount = db.exec("SELECT COUNT(*) FROM books")[0].values[0][0];
@@ -193,7 +196,12 @@ function seedSettings() {
         'qr_image': '',
         'platform_litnet': 'https://litnet.com/ru/rena-rud-u3659590',
         'platform_litgorod': 'https://litgorod.ru/profile/680841/books',
-        'contact_email': 'hello@heart-book.ru'
+        'platform_litres': '',
+        'contact_email': 'hello@heart-book.ru',
+        'author_name': 'Рена Руд',
+        'author_text1': 'Мой писательский путь начался чуть больше года назад, и, несмотря на серьёзную конкуренцию, я уверенно двигаюсь вперёд. Мои книги можно найти на «Литнет» и «ЛитГород», немного — на «Литрес».',
+        'author_text2': 'Пишу молодёжные, современные и женские романы с уклоном в драму. Сейчас учусь разбираться и в других жанрах — пока для себя, но кто знает, что будет дальше!?',
+        'author_photo': 'assets/avatar_2_kopia.png'
     };
     const stmt = db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`);
     Object.entries(defaults).forEach(([k, v]) => { stmt.run([k, v]); });
@@ -356,8 +364,23 @@ app.post('/api/books', authMiddleware, requireDB, (req, res) => {
 app.put('/api/books/:id', authMiddleware, requireDB, (req, res) => {
     try {
         const { title, genre, badge, description, prologue, litnet, litgorod, litres, cover, color } = req.body;
+        // Получаем текущие данные книги
+        const current = queryAll('SELECT * FROM books WHERE id = ?', [req.params.id])[0];
+        if (!current) return res.status(404).json({ error: 'Not found' });
         db.run(`UPDATE books SET title=?, genre=?, badge=?, description=?, prologue=?, litnet=?, litgorod=?, litres=?, cover=?, color=? WHERE id=?`,
-            [title || '', genre || '', badge || '', description || '', prologue || '', litnet || '', litgorod || '', litres || '', cover || '', color || '#9a3f55', req.params.id]);
+            [
+                title !== undefined ? title : current.title,
+                genre !== undefined ? genre : current.genre,
+                badge !== undefined ? badge : current.badge,
+                description !== undefined ? description : current.description,
+                prologue !== undefined ? prologue : current.prologue,
+                litnet !== undefined ? litnet : current.litnet,
+                litgorod !== undefined ? litgorod : current.litgorod,
+                litres !== undefined ? litres : current.litres,
+                cover !== undefined ? cover : current.cover,
+                color !== undefined ? color : (current.color || '#9a3f55'),
+                req.params.id
+            ]);
         saveDB();
         res.json({ success: true });
     } catch (err) {

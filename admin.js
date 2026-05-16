@@ -294,6 +294,12 @@ const qrRemoveBtn = document.getElementById('qrRemoveBtn');
 const qrPreview = document.getElementById('qrPreview');
 const qrImageHidden = document.getElementById('sQrImage');
 
+const authorFileInput = document.getElementById('authorFileInput');
+const authorUploadBtn = document.getElementById('authorUploadBtn');
+const authorRemoveBtn = document.getElementById('authorRemoveBtn');
+const authorPreview = document.getElementById('authorPreview');
+const authorPhotoHidden = document.getElementById('sAuthorPhoto');
+
 qrUploadBtn.addEventListener('click', () => qrFileInput.click());
 
 qrFileInput.addEventListener('change', async () => {
@@ -319,6 +325,32 @@ qrRemoveBtn.addEventListener('click', () => {
     qrRemoveBtn.style.display = 'none';
 });
 
+// Author photo upload
+authorUploadBtn.addEventListener('click', () => authorFileInput.click());
+
+authorFileInput.addEventListener('change', async () => {
+    const file = authorFileInput.files[0];
+    if (!file) return;
+    authorUploadBtn.textContent = 'Загрузка...';
+    authorUploadBtn.disabled = true;
+    const result = await uploadFile(file);
+    authorUploadBtn.textContent = 'Загрузить фото';
+    authorUploadBtn.disabled = false;
+    if (result.success) {
+        authorPhotoHidden.value = result.url;
+        authorPreview.innerHTML = `<img src="${escAttr(result.url)}" style="max-height:100px;border-radius:8px" alt="Author">`;
+        authorRemoveBtn.style.display = '';
+    } else {
+        alert('Ошибка: ' + (result.error || 'не удалось загрузить'));
+    }
+});
+
+authorRemoveBtn.addEventListener('click', () => {
+    authorPhotoHidden.value = '';
+    authorPreview.innerHTML = '';
+    authorRemoveBtn.style.display = 'none';
+});
+
 function fillSettingsForm() {
     document.getElementById('sTelegram').value = settingsData.social_telegram || '';
     document.getElementById('sVk').value = settingsData.social_vk || '';
@@ -330,11 +362,22 @@ function fillSettingsForm() {
     document.getElementById('sTgUsername').value = settingsData.telegram_username || '';
     document.getElementById('sPlatformLitnet').value = settingsData.platform_litnet || '';
     document.getElementById('sPlatformLitgorod').value = settingsData.platform_litgorod || '';
+    document.getElementById('sPlatformLitres').value = settingsData.platform_litres || '';
     document.getElementById('sEmail').value = settingsData.contact_email || '';
+    document.getElementById('sAuthorName').value = settingsData.author_name || '';
+    document.getElementById('sAuthorText1').value = settingsData.author_text1 || '';
+    document.getElementById('sAuthorText2').value = settingsData.author_text2 || '';
+    // QR
     qrImageHidden.value = settingsData.qr_image || '';
     if (settingsData.qr_image) {
         qrPreview.innerHTML = `<img src="${escAttr(settingsData.qr_image)}" style="max-height:100px;border-radius:8px" alt="QR">`;
         qrRemoveBtn.style.display = '';
+    }
+    // Author photo
+    authorPhotoHidden.value = settingsData.author_photo || '';
+    if (settingsData.author_photo) {
+        authorPreview.innerHTML = `<img src="${escAttr(settingsData.author_photo)}" style="max-height:100px;border-radius:8px" alt="Author">`;
+        authorRemoveBtn.style.display = '';
     }
 }
 
@@ -352,7 +395,12 @@ document.getElementById('settingsForm').addEventListener('submit', async e => {
         qr_image: qrImageHidden.value,
         platform_litnet: document.getElementById('sPlatformLitnet').value.trim(),
         platform_litgorod: document.getElementById('sPlatformLitgorod').value.trim(),
-        contact_email: document.getElementById('sEmail').value.trim()
+        platform_litres: document.getElementById('sPlatformLitres').value.trim(),
+        contact_email: document.getElementById('sEmail').value.trim(),
+        author_name: document.getElementById('sAuthorName').value.trim(),
+        author_text1: document.getElementById('sAuthorText1').value.trim(),
+        author_text2: document.getElementById('sAuthorText2').value.trim(),
+        author_photo: authorPhotoHidden.value
     };
     const result = await apiFetch('/api/settings', { method: 'PUT', body: JSON.stringify(body) });
     if (result.success) {

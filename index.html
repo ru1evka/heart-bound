@@ -38,7 +38,7 @@
     <div class="container hero__inner">
         <p class="hero__eyebrow">— авторские любовные романы —</p>
         <h1 class="hero__title">Истории, от которых<br><span>замирает сердце</span></h1>
-        <p class="hero__lead">Прочтите аннотацию прямо здесь. Полные версии романов ждут вас на платформах <strong>Литнет</strong> и <strong>ЛитГород</strong>.</p>
+        <p class="hero__lead">Прочтите аннотацию прямо здесь. Полные версии романов ждут вас на платформах <strong>Литнет</strong>, <strong>ЛитГород</strong> и <strong>Литрес</strong>.</p>
         <div class="hero__btns">
             <a href="#books" class="btn btn--primary">Открыть библиотеку</a>
             <a href="#blog" class="btn btn--ghost">Читать блог</a>
@@ -72,15 +72,15 @@
     <div class="container about__inner">
         <div class="about__photo">
             <div class="about__photo-frame">
-                <img src="assets/avatar_2_kopia.png" alt="Автор" onerror="this.style.display='none'">
+                <img id="authorPhoto" src="assets/avatar_2_kopia.png" alt="Автор" onerror="this.style.display='none'">
                 <div class="about__photo-fallback"></div>
             </div>
         </div>
         <div class="about__text">
             <p class="section-head__eyebrow">— об авторе —</p>
-            <h2 class="section-head__title">Рена Руд</h2>
-            <p>Мой писательский путь начался чуть больше года назад, и, несмотря на серьёзную конкуренцию, я уверенно двигаюсь вперёд. Мои книги можно найти на «Литнет» и «ЛитГород», немного — на «Литрес».</p>
-            <p>Пишу молодёжные, современные и женские романы с уклоном в драму. Сейчас учусь разбираться и в других жанрах — пока для себя, но кто знает, что будет дальше!?</p>
+            <h2 class="section-head__title" id="authorName">Рена Руд</h2>
+            <p id="authorText1">Мой писательский путь начался чуть больше года назад, и, несмотря на серьёзную конкуренцию, я уверенно двигаюсь вперёд. Мои книги можно найти на «Литнет» и «ЛитГород», немного — на «Литрес».</p>
+            <p id="authorText2">Пишу молодёжные, современные и женские романы с уклоном в драму. Сейчас учусь разбираться и в других жанрах — пока для себя, но кто знает, что будет дальше!?</p>
             <a href="#books" class="btn btn--ghost">Мои книги</a>
         </div>
     </div>
@@ -139,10 +139,11 @@
             </a>
             <p>Любовные романы, которые остаются с вами надолго.</p>
         </div>
-        <div class="footer__col">
+        <div class="footer__col" id="footerPlatforms">
             <h4>Платформы</h4>
             <a href="https://litnet.com/ru/rena-rud-u3659590" target="_blank" rel="noopener">Литнет</a>
             <a href="https://litgorod.ru/profile/680841/books" target="_blank" rel="noopener">ЛитГород</a>
+            <a href="#" target="_blank" rel="noopener" id="footerLitres" style="display:none">Литрес</a>
         </div>
         <div class="footer__col">
             <h4>Меню</h4>

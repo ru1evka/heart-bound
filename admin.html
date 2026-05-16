@@ -138,6 +138,36 @@
                         <label for="sPlatformLitgorod">ЛитГород (профиль автора)</label>
                         <input type="url" id="sPlatformLitgorod" placeholder="https://litgorod.ru/...">
                     </div>
+                    <div class="form__group">
+                        <label for="sPlatformLitres">Литрес (профиль автора)</label>
+                        <input type="url" id="sPlatformLitres" placeholder="https://www.litres.ru/...">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Об авторе</h3>
+                    <div class="form__group">
+                        <label for="sAuthorName">Имя автора</label>
+                        <input type="text" id="sAuthorName" placeholder="Рена Руд">
+                    </div>
+                    <div class="form__group">
+                        <label for="sAuthorText1">Первый абзац</label>
+                        <textarea id="sAuthorText1" rows="3" placeholder="О себе..."></textarea>
+                    </div>
+                    <div class="form__group">
+                        <label for="sAuthorText2">Второй абзац</label>
+                        <textarea id="sAuthorText2" rows="3" placeholder="Что пишу..."></textarea>
+                    </div>
+                    <div class="form__group">
+                        <label>Фото автора</label>
+                        <div class="upload-area" id="authorUploadArea">
+                            <input type="file" id="authorFileInput" accept="image/*" hidden>
+                            <div class="upload-area__preview" id="authorPreview"></div>
+                            <button type="button" class="btn btn--small btn--ghost" id="authorUploadBtn">Загрузить фото</button>
+                            <button type="button" class="btn btn--small btn--danger" id="authorRemoveBtn" style="display:none">Удалить</button>
+                        </div>
+                        <input type="hidden" id="sAuthorPhoto">
+                    </div>
                 </div>
 
                 <div class="settings-section">
