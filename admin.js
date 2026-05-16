@@ -189,6 +189,7 @@ function editBook(id) {
     document.getElementById('bookLitnet').value = book.litnet || '';
     document.getElementById('bookLitgorod').value = book.litgorod || '';
     document.getElementById('bookLitres').value = book.litres || '';
+    document.getElementById('bookBtnType').value = book.btn_type || 'buy';
     bookCoverHidden.value = book.cover || '';
     bookCoverUrl.value = book.cover || '';
     document.getElementById('bookColor').value = book.color || '#9a3f55';
@@ -217,6 +218,7 @@ document.getElementById('bookForm').addEventListener('submit', async e => {
         litnet: document.getElementById('bookLitnet').value.trim(),
         litgorod: document.getElementById('bookLitgorod').value.trim(),
         litres: document.getElementById('bookLitres').value.trim(),
+        btn_type: document.getElementById('bookBtnType').value,
         cover: cover.trim(),
         color: document.getElementById('bookColor').value
     };

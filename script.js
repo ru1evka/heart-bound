@@ -75,7 +75,7 @@ function renderBookCards() {
             mediaHtml = `<img class="book-card__media" src="${escAttr(cover)}" alt="${escAttr(book.title)}">`;
         }
         const badgeHtml = book.badge
-            ? `<span class="book-card__badge${book.badge === 'Бестселлер' ? ' book-card__badge--gold' : ''}">${escHtml(book.badge)}</span>`
+            ? `<span class="book-card__badge${book.badge === 'Бестселлер' ? ' book-card__badge--gold' : ''}${book.badge === 'Бесплатно' ? ' book-card__badge--free' : ''}">${escHtml(book.badge)}</span>`
             : '';
         return `
         <article class="book-card" data-book="${escAttr(book.id)}">
@@ -198,6 +198,13 @@ function openBook(id) {
             linkLitres.style.display = 'none';
         }
     }
+
+    // Текст кнопок: «Купить» или «Читать бесплатно»
+    const isFree = book.btn_type === 'free';
+    const prefix = isFree ? 'Читать бесплатно на' : 'Купить на';
+    linkLitnet.textContent = `${prefix} Литнет`;
+    linkLitgorod.textContent = `${prefix} ЛитГород`;
+    if (linkLitres) linkLitres.textContent = `${prefix} Литрес`;
 
     modal.classList.add('is-open');
     modal.setAttribute('aria-hidden', 'false');

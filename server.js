@@ -78,6 +78,7 @@ async function initDB() {
                 litnet TEXT DEFAULT 'https://litnet.com/',
                 litgorod TEXT DEFAULT 'https://litgorod.ru/',
                 litres TEXT DEFAULT '',
+                btn_type TEXT DEFAULT 'buy',
                 cover TEXT DEFAULT '',
                 color TEXT DEFAULT '#9a3f55',
                 sort_order INTEGER DEFAULT 0,
@@ -109,6 +110,8 @@ async function initDB() {
 
         // Миграция: добавляем колонку litres если её нет
         try { db.run(`ALTER TABLE books ADD COLUMN litres TEXT DEFAULT ''`); } catch (e) { /* уже есть */ }
+        // Миграция: добавляем btn_type если нет
+        try { db.run(`ALTER TABLE books ADD COLUMN btn_type TEXT DEFAULT 'buy'`); } catch (e) { /* уже есть */ }
         // Миграция: добавляем новые настройки если нет
         const newSettings = ['social_dzen', 'platform_litres', 'author_name', 'author_text1', 'author_text2', 'author_photo'];
         newSettings.forEach(key => {
@@ -131,7 +134,7 @@ async function initDB() {
         try {
             const SQL = await initSqlJs();
             db = new SQL.Database();
-            db.run(`CREATE TABLE IF NOT EXISTS books (id TEXT PRIMARY KEY, title TEXT NOT NULL, genre TEXT DEFAULT '', badge TEXT DEFAULT '', description TEXT DEFAULT '', prologue TEXT DEFAULT '', litnet TEXT DEFAULT '', litgorod TEXT DEFAULT '', litres TEXT DEFAULT '', cover TEXT DEFAULT '', color TEXT DEFAULT '#9a3f55', sort_order INTEGER DEFAULT 0, created_at TEXT DEFAULT (datetime('now')))`);
+            db.run(`CREATE TABLE IF NOT EXISTS books (id TEXT PRIMARY KEY, title TEXT NOT NULL, genre TEXT DEFAULT '', badge TEXT DEFAULT '', description TEXT DEFAULT '', prologue TEXT DEFAULT '', litnet TEXT DEFAULT '', litgorod TEXT DEFAULT '', litres TEXT DEFAULT '', btn_type TEXT DEFAULT 'buy', cover TEXT DEFAULT '', color TEXT DEFAULT '#9a3f55', sort_order INTEGER DEFAULT 0, created_at TEXT DEFAULT (datetime('now')))`);
             db.run(`CREATE TABLE IF NOT EXISTS posts (id TEXT PRIMARY KEY, title TEXT NOT NULL, date TEXT DEFAULT '', content TEXT DEFAULT '', link TEXT DEFAULT '#', created_at TEXT DEFAULT (datetime('now')))`);
             seedBooks();
             seedPosts();
@@ -167,8 +170,8 @@ function seedBooks() {
         { id: '3', title: 'Письма, которых не было', genre: 'Исторический роман', badge: '', description: 'Сто лет молчания и одно признание, способное всё перевернуть.', prologue: 'В пыльном чердаке бабушкиного дома Аня нашла шкатулку из вишнёвого дерева. Замок поддался с тихим щелчком — словно ждал её сто лет.\n\nВнутри лежали письма. Перевязанные выцветшей лентой, написанные чернилами, которые местами расплывались — то ли от времени, то ли от слёз. На первом конверте значилось: «Елене. Если ты когда-нибудь это прочитаешь — знай, я любил».\n\nАня осторожно развернула лист. Прочитала первую строку — и поняла, что бабушкина история была совсем не такой, как ей рассказывали.', litnet: 'https://litnet.com/', litgorod: 'https://litgorod.ru/', cover: 'assets/book3.jpg.svg', color: '#3a2818', sort_order: 3 },
         { id: '4', title: 'Танец на грани рассвета', genre: 'Городское фэнтези · Любовь', badge: 'Скоро', description: 'Между двумя мирами стоит лишь её сердце.', prologue: 'Город никогда не спал. Под неоновым дождём, между мирами, в час, когда звёзды стираются с неба, Эва выходила танцевать. Это был её ритуал — и её проклятие.\n\nСегодня в зал «Полуночи» вошёл он. Не такой, как все. Слишком тихий, слишком пристальный. И когда их взгляды встретились через дым и блики, Эва почувствовала, как реальность дрогнула.\n\n«Ты знаешь, кто я?» — спросил он, протягивая руку. Эва не знала. Но она шагнула навстречу.', litnet: 'https://litnet.com/', litgorod: 'https://litgorod.ru/', cover: 'assets/book4.jpg.svg', color: '#0a0a2a', sort_order: 4 }
     ];
-    const stmt = db.prepare(`INSERT INTO books (id, title, genre, badge, description, prologue, litnet, litgorod, litres, cover, color, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-    books.forEach(b => { stmt.run([b.id, b.title, b.genre, b.badge, b.description, b.prologue, b.litnet, b.litgorod, b.litres || '', b.cover, b.color, b.sort_order]); });
+    const stmt = db.prepare(`INSERT INTO books (id, title, genre, badge, description, prologue, litnet, litgorod, litres, btn_type, cover, color, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+    books.forEach(b => { stmt.run([b.id, b.title, b.genre, b.badge, b.description, b.prologue, b.litnet, b.litgorod, b.litres || '', b.btn_type || 'buy', b.cover, b.color, b.sort_order]); });
     stmt.free();
 }
 
@@ -373,11 +376,11 @@ app.get('/api/books/:id', requireDB, (req, res) => {
 
 app.post('/api/books', authMiddleware, requireDB, (req, res) => {
     try {
-        const { title, genre, badge, description, prologue, litnet, litgorod, litres, cover, color } = req.body;
+        const { title, genre, badge, description, prologue, litnet, litgorod, litres, btn_type, cover, color } = req.body;
         const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
         const maxOrder = queryAll('SELECT MAX(sort_order) as m FROM books')[0]?.m || 0;
-        db.run(`INSERT INTO books (id, title, genre, badge, description, prologue, litnet, litgorod, litres, cover, color, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [id, title || '', genre || '', badge || '', description || '', prologue || '', litnet || 'https://litnet.com/', litgorod || 'https://litgorod.ru/', litres || '', cover || '', color || '#9a3f55', maxOrder + 1]);
+        db.run(`INSERT INTO books (id, title, genre, badge, description, prologue, litnet, litgorod, litres, btn_type, cover, color, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [id, title || '', genre || '', badge || '', description || '', prologue || '', litnet || '', litgorod || '', litres || '', btn_type || 'buy', cover || '', color || '#9a3f55', maxOrder + 1]);
         saveDB();
         res.json({ id, success: true });
     } catch (err) {
@@ -387,11 +390,10 @@ app.post('/api/books', authMiddleware, requireDB, (req, res) => {
 
 app.put('/api/books/:id', authMiddleware, requireDB, (req, res) => {
     try {
-        const { title, genre, badge, description, prologue, litnet, litgorod, litres, cover, color } = req.body;
-        // Получаем текущие данные книги
+        const { title, genre, badge, description, prologue, litnet, litgorod, litres, btn_type, cover, color } = req.body;
         const current = queryAll('SELECT * FROM books WHERE id = ?', [req.params.id])[0];
         if (!current) return res.status(404).json({ error: 'Not found' });
-        db.run(`UPDATE books SET title=?, genre=?, badge=?, description=?, prologue=?, litnet=?, litgorod=?, litres=?, cover=?, color=? WHERE id=?`,
+        db.run(`UPDATE books SET title=?, genre=?, badge=?, description=?, prologue=?, litnet=?, litgorod=?, litres=?, btn_type=?, cover=?, color=? WHERE id=?`,
             [
                 title !== undefined ? title : current.title,
                 genre !== undefined ? genre : current.genre,
@@ -401,6 +403,7 @@ app.put('/api/books/:id', authMiddleware, requireDB, (req, res) => {
                 litnet !== undefined ? litnet : current.litnet,
                 litgorod !== undefined ? litgorod : current.litgorod,
                 litres !== undefined ? litres : current.litres,
+                btn_type !== undefined ? btn_type : (current.btn_type || 'buy'),
                 cover !== undefined ? cover : current.cover,
                 color !== undefined ? color : (current.color || '#9a3f55'),
                 req.params.id
