@@ -75,7 +75,7 @@ function renderBookCards() {
             mediaHtml = `<img class="book-card__media" src="${escAttr(cover)}" alt="${escAttr(book.title)}">`;
         }
         const badgeHtml = book.badge
-            ? `<span class="book-card__badge${book.badge === 'Бестселлер' ? ' book-card__badge--gold' : ''}${book.badge === 'Бесплатно' ? ' book-card__badge--free' : ''}">${escHtml(book.badge)}</span>`
+            ? `<span class="book-card__badge${book.badge === 'Бестселлер' ? ' book-card__badge--gold' : ''}${book.badge === 'Бесплатно' ? ' book-card__badge--free' : ''}${book.badge === 'Эксклюзив' ? ' book-card__badge--exclusive' : ''}">${escHtml(book.badge)}</span>`
             : '';
         return `
         <article class="book-card" data-book="${escAttr(book.id)}">

@@ -322,6 +322,7 @@ h1, h2, h3, h4 {
 }
 .book-card__badge--gold { background: var(--gold); color: var(--ink); }
 .book-card__badge--free { background: #27ae60; color: #fff; }
+.book-card__badge--exclusive { background: linear-gradient(135deg, #8e44ad, #c0392b); color: #fff; }
 .book-card__body {
     padding: 24px;
     display: flex;
