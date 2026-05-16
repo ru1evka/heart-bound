@@ -775,3 +775,9 @@ body.no-scroll { overflow: hidden; }
 
 /* ===== Кликабельные карточки постов ===== */
 .post { cursor: pointer; }
+
+/* ===== Кнопка «Загрузить ещё» ===== */
+.load-more-wrap {
+    text-align: center;
+    margin-top: 40px;
+}

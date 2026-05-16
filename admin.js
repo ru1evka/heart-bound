@@ -188,6 +188,7 @@ function editBook(id) {
     document.getElementById('bookPrologue').value = book.prologue || '';
     document.getElementById('bookLitnet').value = book.litnet || '';
     document.getElementById('bookLitgorod').value = book.litgorod || '';
+    document.getElementById('bookLitres').value = book.litres || '';
     bookCoverHidden.value = book.cover || '';
     bookCoverUrl.value = book.cover || '';
     document.getElementById('bookColor').value = book.color || '#9a3f55';
@@ -215,6 +216,7 @@ document.getElementById('bookForm').addEventListener('submit', async e => {
         prologue: document.getElementById('bookPrologue').value.trim(),
         litnet: document.getElementById('bookLitnet').value.trim(),
         litgorod: document.getElementById('bookLitgorod').value.trim(),
+        litres: document.getElementById('bookLitres').value.trim(),
         cover: cover.trim(),
         color: document.getElementById('bookColor').value
     };
@@ -323,6 +325,7 @@ function fillSettingsForm() {
     document.getElementById('sInstagram').value = settingsData.social_instagram || '';
     document.getElementById('sYoutube').value = settingsData.social_youtube || '';
     document.getElementById('sTiktok').value = settingsData.social_tiktok || '';
+    document.getElementById('sDzen').value = settingsData.social_dzen || '';
     document.getElementById('sTgChannel').value = settingsData.telegram_channel || '';
     document.getElementById('sTgUsername').value = settingsData.telegram_username || '';
     document.getElementById('sPlatformLitnet').value = settingsData.platform_litnet || '';
@@ -343,6 +346,7 @@ document.getElementById('settingsForm').addEventListener('submit', async e => {
         social_instagram: document.getElementById('sInstagram').value.trim(),
         social_youtube: document.getElementById('sYoutube').value.trim(),
         social_tiktok: document.getElementById('sTiktok').value.trim(),
+        social_dzen: document.getElementById('sDzen').value.trim(),
         telegram_channel: document.getElementById('sTgChannel').value.trim(),
         telegram_username: document.getElementById('sTgUsername').value.trim(),
         qr_image: qrImageHidden.value,

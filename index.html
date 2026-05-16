@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Сердце в переплёте — любовные романы</title>
-    <meta name="description" content="Авторские любовные романы. Читайте анотацию, продолжение — на Литнет и ЛитГород.">
+    <meta name="description" content="Авторские любовные романы. Читайте аннотацию, продолжение — на Литнет и ЛитГород.">
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -38,7 +38,7 @@
     <div class="container hero__inner">
         <p class="hero__eyebrow">— авторские любовные романы —</p>
         <h1 class="hero__title">Истории, от которых<br><span>замирает сердце</span></h1>
-        <p class="hero__lead">Прочтите анотацию прямо здесь. Полные версии романов ждут вас на платформах <strong>Литнет</strong> и <strong>ЛитГород</strong>.</p>
+        <p class="hero__lead">Прочтите аннотацию прямо здесь. Полные версии романов ждут вас на платформах <strong>Литнет</strong> и <strong>ЛитГород</strong>.</p>
         <div class="hero__btns">
             <a href="#books" class="btn btn--primary">Открыть библиотеку</a>
             <a href="#blog" class="btn btn--ghost">Читать блог</a>
@@ -61,6 +61,9 @@
         <div class="book-grid">
             <!-- Карточки книг рендерятся динамически из script.js -->
         </div>
+        <div class="load-more-wrap" id="booksLoadMoreWrap" style="display:none">
+            <button class="btn btn--ghost" id="booksLoadMore">Загрузить ещё</button>
+        </div>
     </div>
 </section>
 
@@ -69,7 +72,7 @@
     <div class="container about__inner">
         <div class="about__photo">
             <div class="about__photo-frame">
-                <img src="assets/1771425571_5RwSD0lz.png" alt="Автор" onerror="this.style.display='none'">
+                <img src="assets/avatar_2_kopia.png" alt="Автор" onerror="this.style.display='none'">
                 <div class="about__photo-fallback"></div>
             </div>
         </div>
@@ -94,6 +97,9 @@
 
         <div class="blog-grid">
             <!-- Записи блога рендерятся динамически из script.js -->
+        </div>
+        <div class="load-more-wrap" id="postsLoadMoreWrap" style="display:none">
+            <button class="btn btn--ghost" id="postsLoadMore">Загрузить ещё</button>
         </div>
 
         <!-- Соцсети -->
@@ -144,10 +150,9 @@
             <a href="#about">Автор</a>
             <a href="#blog">Блог</a>
         </div>
-        <div class="footer__col">
+        <div class="footer__col" id="footerContact">
             <h4>Связь</h4>
-            <a href="mailto:hello@heart-book.ru">hello@heart-book.ru</a>
-            <a href="https://t.me/RenaRud">Telegram-канал</a>
+            <!-- Рендерится динамически из script.js -->
         </div>
     </div>
     <div class="footer__bottom">
@@ -168,13 +173,14 @@
         <div class="modal__body">
             <p class="modal__genre" id="modalGenre"></p>
             <h2 id="modalTitle"></h2>
-            <h3 class="modal__prologue-title">Анотация</h3>
+            <h3 class="modal__prologue-title">Аннотация</h3>
             <div class="modal__prologue" id="modalPrologue"></div>
             <div class="modal__buy">
                 <p>Продолжение читайте на платформах:</p>
                 <div class="modal__buy-row">
                     <a href="https://litnet.com" target="_blank" rel="noopener" class="btn btn--primary" id="linkLitnet">Купить на Литнет</a>
                     <a href="https://litgorod.ru" target="_blank" rel="noopener" class="btn btn--ghost" id="linkLitgorod">Купить на ЛитГород</a>
+                    <a href="https://litres.ru" target="_blank" rel="noopener" class="btn btn--ghost" id="linkLitres" style="display:none">Купить на Литрес</a>
                 </div>
             </div>
         </div>
