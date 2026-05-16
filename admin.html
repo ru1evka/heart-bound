@@ -27,6 +27,10 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                 Блог
             </button>
+            <button class="sidebar__link" data-tab="settings">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                Настройки
+            </button>
             <a href="index.html" class="sidebar__link sidebar__link--back">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
                 На сайт
@@ -65,6 +69,87 @@
             </div>
         </section>
 
+        <!-- ===== Настройки ===== -->
+        <section class="tab-panel" id="tab-settings">
+            <div class="panel-header">
+                <h1>Настройки сайта</h1>
+            </div>
+
+            <form id="settingsForm" class="settings-form">
+                <div class="settings-section">
+                    <h3>Социальные сети</h3>
+                    <p class="settings-hint">Оставьте поле пустым, чтобы скрыть кнопку на сайте</p>
+                    <div class="form__group">
+                        <label for="sTelegram">Telegram</label>
+                        <input type="url" id="sTelegram" placeholder="https://t.me/username">
+                    </div>
+                    <div class="form__group">
+                        <label for="sVk">ВКонтакте</label>
+                        <input type="url" id="sVk" placeholder="https://vk.com/...">
+                    </div>
+                    <div class="form__group">
+                        <label for="sInstagram">Instagram</label>
+                        <input type="url" id="sInstagram" placeholder="https://instagram.com/...">
+                    </div>
+                    <div class="form__group">
+                        <label for="sYoutube">YouTube</label>
+                        <input type="url" id="sYoutube" placeholder="https://youtube.com/...">
+                    </div>
+                    <div class="form__group">
+                        <label for="sTiktok">TikTok</label>
+                        <input type="url" id="sTiktok" placeholder="https://tiktok.com/@...">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Telegram-канал и QR-код</h3>
+                    <div class="form__group">
+                        <label for="sTgChannel">Ссылка на канал/чат</label>
+                        <input type="url" id="sTgChannel" placeholder="https://t.me/channel">
+                    </div>
+                    <div class="form__group">
+                        <label for="sTgUsername">Юзернейм (отображается под QR)</label>
+                        <input type="text" id="sTgUsername" placeholder="@username">
+                    </div>
+                    <div class="form__group">
+                        <label>QR-код (загрузить своё изображение)</label>
+                        <div class="upload-area" id="qrUploadArea">
+                            <input type="file" id="qrFileInput" accept="image/*" hidden>
+                            <div class="upload-area__preview" id="qrPreview"></div>
+                            <button type="button" class="btn btn--small btn--ghost" id="qrUploadBtn">Загрузить QR-код</button>
+                            <button type="button" class="btn btn--small btn--danger" id="qrRemoveBtn" style="display:none">Удалить</button>
+                            <p class="upload-area__hint">Если не загружен — генерируется автоматически из ссылки</p>
+                        </div>
+                        <input type="hidden" id="sQrImage">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Платформы</h3>
+                    <div class="form__group">
+                        <label for="sPlatformLitnet">Литнет (профиль автора)</label>
+                        <input type="url" id="sPlatformLitnet" placeholder="https://litnet.com/...">
+                    </div>
+                    <div class="form__group">
+                        <label for="sPlatformLitgorod">ЛитГород (профиль автора)</label>
+                        <input type="url" id="sPlatformLitgorod" placeholder="https://litgorod.ru/...">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Контакты</h3>
+                    <div class="form__group">
+                        <label for="sEmail">Email</label>
+                        <input type="email" id="sEmail" placeholder="hello@example.com">
+                    </div>
+                </div>
+
+                <div class="form__actions">
+                    <button type="submit" class="btn btn--primary">Сохранить настройки</button>
+                </div>
+            </form>
+        </section>
+
     </main>
 </div>
 
@@ -101,7 +186,7 @@
                 <input type="text" id="bookDesc" placeholder="Она искала тишину...">
             </div>
             <div class="form__group">
-                <label for="bookPrologue">Текст пролога</label>
+                <label for="bookPrologue">Текст анотации</label>
                 <textarea id="bookPrologue" rows="8" placeholder="Снег падал так тихо..."></textarea>
             </div>
             <div class="form__row">
@@ -115,8 +200,18 @@
                 </div>
             </div>
             <div class="form__group">
-                <label for="bookCover">Обложка (URL изображения, gif или mp4)</label>
-                <input type="text" id="bookCover" placeholder="assets/book1.mp4 или https://...">
+                <label>Обложка (загрузить файл: jpg, png, gif, mp4)</label>
+                <div class="upload-area" id="coverUploadArea">
+                    <input type="file" id="coverFileInput" accept="image/*,video/mp4,video/webm,.gif" hidden>
+                    <div class="upload-area__preview" id="coverPreview"></div>
+                    <button type="button" class="btn btn--small btn--ghost" id="coverUploadBtn">Загрузить обложку</button>
+                    <button type="button" class="btn btn--small btn--danger" id="coverRemoveBtn" style="display:none">Удалить</button>
+                </div>
+                <input type="hidden" id="bookCover">
+                <div class="form__group" style="margin-top:8px">
+                    <label for="bookCoverUrl">Или вставьте URL</label>
+                    <input type="text" id="bookCoverUrl" placeholder="https://... или assets/...">
+                </div>
             </div>
             <div class="form__group">
                 <label for="bookColor">Цвет фона обложки (если нет файла)</label>

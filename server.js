@@ -2,11 +2,44 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const multer = require('multer');
 const initSqlJs = require('sql.js');
 
 const PORT = process.env.PORT || 3000;
 const DB_PATH = path.join(__dirname, 'data.db');
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
+// Создаём папку для загрузок
+if (!fs.existsSync(UPLOADS_DIR)) {
+    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+
+// ===== Настройка multer для загрузки файлов =====
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, UPLOADS_DIR),
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        const name = Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8) + ext;
+        cb(null, name);
+    }
+});
+
+const fileFilter = (req, file, cb) => {
+    const allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.mp4', '.webm'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.includes(ext)) {
+        cb(null, true);
+    } else {
+        cb(new Error('Недопустимый формат файла'), false);
+    }
+};
+
+const upload = multer({
+    storage,
+    fileFilter,
+    limits: { fileSize: 50 * 1024 * 1024 } // 50 МБ макс
+});
 
 // ===== Настройки авторизации =====
 const ADMIN_LOGIN = process.env.ADMIN_LOGIN || 'admin';
@@ -61,6 +94,17 @@ async function initDB() {
                 created_at TEXT DEFAULT (datetime('now'))
             )
         `);
+
+        db.run(`
+            CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT DEFAULT ''
+            )
+        `);
+
+        // Дефолтные настройки соцсетей и QR
+        const settingsCount = db.exec("SELECT COUNT(*) FROM settings")[0].values[0][0];
+        if (settingsCount === 0) seedSettings();
 
         // Заполняем дефолтными данными если пусто
         const bookCount = db.exec("SELECT COUNT(*) FROM books")[0].values[0][0];
@@ -127,6 +171,25 @@ function seedPosts() {
     ];
     const stmt = db.prepare(`INSERT INTO posts (id, title, date, content, link) VALUES (?, ?, ?, ?, ?)`);
     posts.forEach(p => { stmt.run([p.id, p.title, p.date, p.content, p.link]); });
+    stmt.free();
+}
+
+function seedSettings() {
+    const defaults = {
+        'social_telegram': 'https://t.me/RenaRud',
+        'social_vk': '',
+        'social_instagram': '',
+        'social_youtube': '',
+        'social_tiktok': '',
+        'telegram_channel': 'https://t.me/RenaRud',
+        'telegram_username': '@RenaRud',
+        'qr_image': '',
+        'platform_litnet': 'https://litnet.com/ru/rena-rud-u3659590',
+        'platform_litgorod': 'https://litgorod.ru/profile/680841/books',
+        'contact_email': 'hello@heart-book.ru'
+    };
+    const stmt = db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`);
+    Object.entries(defaults).forEach(([k, v]) => { stmt.run([k, v]); });
     stmt.free();
 }
 
@@ -357,6 +420,72 @@ app.delete('/api/posts/:id', authMiddleware, requireDB, (req, res) => {
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: 'Ошибка удаления: ' + err.message });
+    }
+});
+
+// ===== API: Загрузка файлов =====
+app.post('/api/upload', authMiddleware, (req, res) => {
+    upload.single('file')(req, res, (err) => {
+        if (err) {
+            if (err instanceof multer.MulterError) {
+                return res.status(400).json({ error: 'Файл слишком большой (макс 50 МБ)' });
+            }
+            return res.status(400).json({ error: err.message || 'Ошибка загрузки' });
+        }
+        if (!req.file) {
+            return res.status(400).json({ error: 'Файл не выбран' });
+        }
+        const fileUrl = '/uploads/' + req.file.filename;
+        res.json({ success: true, url: fileUrl, filename: req.file.filename });
+    });
+});
+
+// Раздача загруженных файлов
+app.use('/uploads', express.static(UPLOADS_DIR, { maxAge: '7d' }));
+
+// ===== API: Настройки (соцсети, QR, платформы) =====
+app.get('/api/settings', requireDB, (req, res) => {
+    try {
+        const rows = queryAll('SELECT key, value FROM settings');
+        const settings = {};
+        rows.forEach(r => { settings[r.key] = r.value; });
+        res.json(settings);
+    } catch (err) {
+        res.status(500).json({ error: 'Ошибка загрузки настроек' });
+    }
+});
+
+app.put('/api/settings', authMiddleware, requireDB, (req, res) => {
+    try {
+        const settings = req.body;
+        if (!settings || typeof settings !== 'object') {
+            return res.status(400).json({ error: 'Неверный формат данных' });
+        }
+        Object.entries(settings).forEach(([key, value]) => {
+            db.run(`INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`, [key, value || '']);
+        });
+        saveDB();
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Ошибка сохранения настроек: ' + err.message });
+    }
+});
+
+// Удаление загруженного файла
+app.delete('/api/upload/:filename', authMiddleware, (req, res) => {
+    const filename = req.params.filename;
+    const filepath = path.join(UPLOADS_DIR, filename);
+    // Защита от path traversal
+    if (!filepath.startsWith(UPLOADS_DIR)) {
+        return res.status(400).json({ error: 'Недопустимый путь' });
+    }
+    try {
+        if (fs.existsSync(filepath)) {
+            fs.unlinkSync(filepath);
+        }
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Ошибка удаления файла' });
     }
 });
 

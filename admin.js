@@ -4,7 +4,7 @@
         const res = await fetch('/api/auth/check');
         const data = await res.json();
         if (!data.authenticated) {
-            window.location.href = '/admin.html'; // сервер отдаст login.html
+            window.location.href = '/admin.html';
             return;
         }
     } catch (e) {
@@ -22,13 +22,21 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
 // ===== Данные =====
 let booksData = [];
 let postsData = [];
+let settingsData = {};
 
-// ===== API-запросы =====
+// ===== API =====
 async function apiFetch(url, options = {}) {
     const res = await fetch(url, {
         headers: { 'Content-Type': 'application/json' },
         ...options
     });
+    return res.json();
+}
+
+async function uploadFile(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch('/api/upload', { method: 'POST', body: formData });
     return res.json();
 }
 
@@ -42,6 +50,11 @@ async function loadPosts() {
     renderPosts();
 }
 
+async function loadSettings() {
+    settingsData = await apiFetch('/api/settings');
+    fillSettingsForm();
+}
+
 // ===== Табы =====
 document.querySelectorAll('.sidebar__link[data-tab]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -53,28 +66,21 @@ document.querySelectorAll('.sidebar__link[data-tab]').forEach(btn => {
 });
 
 // ===== Модалки =====
-function openModal(id) {
-    document.getElementById(id).classList.add('is-open');
-}
-function closeModalById(id) {
-    document.getElementById(id).classList.remove('is-open');
-}
+function openModal(id) { document.getElementById(id).classList.add('is-open'); }
+function closeModalById(id) { document.getElementById(id).classList.remove('is-open'); }
 
 document.querySelectorAll('[data-close-modal]').forEach(btn => {
     btn.addEventListener('click', () => closeModalById(btn.dataset.closeModal));
 });
-
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
-    overlay.addEventListener('click', e => {
-        if (e.target === overlay) overlay.classList.remove('is-open');
-    });
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('is-open'); });
 });
 
 // ===== Рендер книг =====
 function renderBooks() {
     const list = document.getElementById('booksList');
     if (booksData.length === 0) {
-        list.innerHTML = `<div class="empty-state"><div class="empty-state__icon">📚</div><p>Книг пока нет. Добавьте первую!</p></div>`;
+        list.innerHTML = '<div class="empty-state"><div class="empty-state__icon">📚</div><p>Книг пока нет. Добавьте первую!</p></div>';
         return;
     }
     list.innerHTML = booksData.map(book => `
@@ -95,7 +101,7 @@ function renderBooks() {
 function renderPosts() {
     const list = document.getElementById('postsList');
     if (postsData.length === 0) {
-        list.innerHTML = `<div class="empty-state"><div class="empty-state__icon">✍️</div><p>Записей пока нет. Добавьте первую!</p></div>`;
+        list.innerHTML = '<div class="empty-state"><div class="empty-state__icon">✍️</div><p>Записей пока нет. Добавьте первую!</p></div>';
         return;
     }
     list.innerHTML = postsData.map(post => `
@@ -110,6 +116,58 @@ function renderPosts() {
             </div>
         </div>
     `).join('');
+}
+
+// ===== Загрузка обложки книги =====
+const coverFileInput = document.getElementById('coverFileInput');
+const coverUploadBtn = document.getElementById('coverUploadBtn');
+const coverRemoveBtn = document.getElementById('coverRemoveBtn');
+const coverPreview = document.getElementById('coverPreview');
+const bookCoverHidden = document.getElementById('bookCover');
+const bookCoverUrl = document.getElementById('bookCoverUrl');
+
+coverUploadBtn.addEventListener('click', () => coverFileInput.click());
+
+coverFileInput.addEventListener('change', async () => {
+    const file = coverFileInput.files[0];
+    if (!file) return;
+    coverUploadBtn.textContent = 'Загрузка...';
+    coverUploadBtn.disabled = true;
+    const result = await uploadFile(file);
+    coverUploadBtn.textContent = 'Загрузить обложку';
+    coverUploadBtn.disabled = false;
+    if (result.success) {
+        bookCoverHidden.value = result.url;
+        bookCoverUrl.value = result.url;
+        showCoverPreview(result.url);
+        coverRemoveBtn.style.display = '';
+    } else {
+        alert('Ошибка: ' + (result.error || 'не удалось загрузить'));
+    }
+});
+
+coverRemoveBtn.addEventListener('click', () => {
+    bookCoverHidden.value = '';
+    bookCoverUrl.value = '';
+    coverPreview.innerHTML = '';
+    coverRemoveBtn.style.display = 'none';
+});
+
+bookCoverUrl.addEventListener('input', () => {
+    bookCoverHidden.value = bookCoverUrl.value;
+    if (bookCoverUrl.value) {
+        showCoverPreview(bookCoverUrl.value);
+        coverRemoveBtn.style.display = '';
+    }
+});
+
+function showCoverPreview(url) {
+    if (!url) { coverPreview.innerHTML = ''; return; }
+    if (url.endsWith('.mp4') || url.endsWith('.webm')) {
+        coverPreview.innerHTML = `<video src="${escAttr(url)}" style="max-height:120px;border-radius:8px" autoplay muted loop></video>`;
+    } else {
+        coverPreview.innerHTML = `<img src="${escAttr(url)}" style="max-height:120px;border-radius:8px" alt="preview">`;
+    }
 }
 
 // ===== Книги: CRUD =====
@@ -130,8 +188,11 @@ function editBook(id) {
     document.getElementById('bookPrologue').value = book.prologue || '';
     document.getElementById('bookLitnet').value = book.litnet || '';
     document.getElementById('bookLitgorod').value = book.litgorod || '';
-    document.getElementById('bookCover').value = book.cover || '';
+    bookCoverHidden.value = book.cover || '';
+    bookCoverUrl.value = book.cover || '';
     document.getElementById('bookColor').value = book.color || '#9a3f55';
+    showCoverPreview(book.cover);
+    coverRemoveBtn.style.display = book.cover ? '' : 'none';
     document.getElementById('bookModalTitle').textContent = 'Редактировать книгу';
     openModal('bookModal');
 }
@@ -145,24 +206,23 @@ async function deleteBook(id) {
 document.getElementById('bookForm').addEventListener('submit', async e => {
     e.preventDefault();
     const id = document.getElementById('bookId').value;
+    const cover = bookCoverHidden.value || bookCoverUrl.value;
     const body = {
         title: document.getElementById('bookTitle').value.trim(),
         genre: document.getElementById('bookGenre').value.trim(),
         badge: document.getElementById('bookBadge').value,
         description: document.getElementById('bookDesc').value.trim(),
         prologue: document.getElementById('bookPrologue').value.trim(),
-        litnet: document.getElementById('bookLitnet').value.trim() || 'https://litnet.com/',
-        litgorod: document.getElementById('bookLitgorod').value.trim() || 'https://litgorod.ru/',
-        cover: document.getElementById('bookCover').value.trim(),
+        litnet: document.getElementById('bookLitnet').value.trim(),
+        litgorod: document.getElementById('bookLitgorod').value.trim(),
+        cover: cover.trim(),
         color: document.getElementById('bookColor').value
     };
-
     if (id) {
         await apiFetch('/api/books/' + id, { method: 'PUT', body: JSON.stringify(body) });
     } else {
         await apiFetch('/api/books', { method: 'POST', body: JSON.stringify(body) });
     }
-
     await loadBooks();
     closeModalById('bookModal');
 });
@@ -171,6 +231,10 @@ function resetBookForm() {
     document.getElementById('bookId').value = '';
     document.getElementById('bookForm').reset();
     document.getElementById('bookColor').value = '#9a3f55';
+    bookCoverHidden.value = '';
+    bookCoverUrl.value = '';
+    coverPreview.innerHTML = '';
+    coverRemoveBtn.style.display = 'none';
 }
 
 // ===== Посты: CRUD =====
@@ -207,13 +271,11 @@ document.getElementById('postForm').addEventListener('submit', async e => {
         content: document.getElementById('postContent').value.trim(),
         link: document.getElementById('postLink').value.trim() || '#'
     };
-
     if (id) {
         await apiFetch('/api/posts/' + id, { method: 'PUT', body: JSON.stringify(body) });
     } else {
         await apiFetch('/api/posts', { method: 'POST', body: JSON.stringify(body) });
     }
-
     await loadPosts();
     closeModalById('postModal');
 });
@@ -223,13 +285,89 @@ function resetPostForm() {
     document.getElementById('postForm').reset();
 }
 
+// ===== Настройки =====
+const qrFileInput = document.getElementById('qrFileInput');
+const qrUploadBtn = document.getElementById('qrUploadBtn');
+const qrRemoveBtn = document.getElementById('qrRemoveBtn');
+const qrPreview = document.getElementById('qrPreview');
+const qrImageHidden = document.getElementById('sQrImage');
+
+qrUploadBtn.addEventListener('click', () => qrFileInput.click());
+
+qrFileInput.addEventListener('change', async () => {
+    const file = qrFileInput.files[0];
+    if (!file) return;
+    qrUploadBtn.textContent = 'Загрузка...';
+    qrUploadBtn.disabled = true;
+    const result = await uploadFile(file);
+    qrUploadBtn.textContent = 'Загрузить QR-код';
+    qrUploadBtn.disabled = false;
+    if (result.success) {
+        qrImageHidden.value = result.url;
+        qrPreview.innerHTML = `<img src="${escAttr(result.url)}" style="max-height:100px;border-radius:8px" alt="QR">`;
+        qrRemoveBtn.style.display = '';
+    } else {
+        alert('Ошибка: ' + (result.error || 'не удалось загрузить'));
+    }
+});
+
+qrRemoveBtn.addEventListener('click', () => {
+    qrImageHidden.value = '';
+    qrPreview.innerHTML = '';
+    qrRemoveBtn.style.display = 'none';
+});
+
+function fillSettingsForm() {
+    document.getElementById('sTelegram').value = settingsData.social_telegram || '';
+    document.getElementById('sVk').value = settingsData.social_vk || '';
+    document.getElementById('sInstagram').value = settingsData.social_instagram || '';
+    document.getElementById('sYoutube').value = settingsData.social_youtube || '';
+    document.getElementById('sTiktok').value = settingsData.social_tiktok || '';
+    document.getElementById('sTgChannel').value = settingsData.telegram_channel || '';
+    document.getElementById('sTgUsername').value = settingsData.telegram_username || '';
+    document.getElementById('sPlatformLitnet').value = settingsData.platform_litnet || '';
+    document.getElementById('sPlatformLitgorod').value = settingsData.platform_litgorod || '';
+    document.getElementById('sEmail').value = settingsData.contact_email || '';
+    qrImageHidden.value = settingsData.qr_image || '';
+    if (settingsData.qr_image) {
+        qrPreview.innerHTML = `<img src="${escAttr(settingsData.qr_image)}" style="max-height:100px;border-radius:8px" alt="QR">`;
+        qrRemoveBtn.style.display = '';
+    }
+}
+
+document.getElementById('settingsForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const body = {
+        social_telegram: document.getElementById('sTelegram').value.trim(),
+        social_vk: document.getElementById('sVk').value.trim(),
+        social_instagram: document.getElementById('sInstagram').value.trim(),
+        social_youtube: document.getElementById('sYoutube').value.trim(),
+        social_tiktok: document.getElementById('sTiktok').value.trim(),
+        telegram_channel: document.getElementById('sTgChannel').value.trim(),
+        telegram_username: document.getElementById('sTgUsername').value.trim(),
+        qr_image: qrImageHidden.value,
+        platform_litnet: document.getElementById('sPlatformLitnet').value.trim(),
+        platform_litgorod: document.getElementById('sPlatformLitgorod').value.trim(),
+        contact_email: document.getElementById('sEmail').value.trim()
+    };
+    const result = await apiFetch('/api/settings', { method: 'PUT', body: JSON.stringify(body) });
+    if (result.success) {
+        alert('Настройки сохранены!');
+        settingsData = body;
+    } else {
+        alert('Ошибка: ' + (result.error || 'не удалось сохранить'));
+    }
+});
+
 // ===== Утилиты =====
 function escHtml(str) {
     const div = document.createElement('div');
     div.textContent = str || '';
     return div.innerHTML;
 }
-
+function escAttr(str) {
+    return (str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
 function formatDate(dateStr) {
     if (!dateStr) return '';
     const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
@@ -238,6 +376,7 @@ function formatDate(dateStr) {
     return `${d.getDate()} ${months[d.getMonth()]}`;
 }
 
-// ===== Первый рендер =====
+// ===== Инициализация =====
 loadBooks();
 loadPosts();
+loadSettings();

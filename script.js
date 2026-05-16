@@ -1,13 +1,13 @@
 // ===== Загрузка данных из API с retry =====
 let booksData = [];
 let postsData = [];
+let siteSettings = {};
 
 async function fetchWithRetry(url, retries = 3, delay = 1500) {
     for (let i = 0; i < retries; i++) {
         try {
             const res = await fetch(url);
             if (res.status === 503) {
-                // Сервер ещё запускается
                 await new Promise(r => setTimeout(r, delay));
                 continue;
             }
@@ -27,6 +27,14 @@ async function loadBooks() {
     booksData = data || [];
     renderBookCards();
     observeAnimated();
+}
+
+async function loadSettings() {
+    const data = await fetchWithRetry('/api/settings');
+    siteSettings = data || {};
+    renderSocials();
+    renderTgQr();
+    renderFooterLinks();
 }
 
 async function loadPosts() {
@@ -72,7 +80,7 @@ function renderBookCards() {
                 <h3>${escHtml(book.title)}</h3>
                 <p class="book-card__genre">${escHtml(book.genre)}</p>
                 <p class="book-card__desc">${escHtml(book.description)}</p>
-                <button class="btn btn--small open-book" data-book="${escAttr(book.id)}">Читать пролог</button>
+                <button class="btn btn--small open-book" data-book="${escAttr(book.id)}">Читать анотацию</button>
             </div>
         </article>`;
     }).join('');
@@ -105,9 +113,73 @@ function renderBlogPosts() {
     }).join('');
 }
 
+// ===== Рендер соцсетей из настроек =====
+function renderSocials() {
+    const container = document.querySelector('.socials__row');
+    if (!container) return;
+
+    const socials = [
+        { key: 'social_telegram', name: 'Telegram', cls: 'social--tg', icon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.5 4.5L2.5 12l5.5 1.8L17 7.5 9.5 14l-.3 4.5 3-2.7 4.5 3.4z"/></svg>' },
+        { key: 'social_vk', name: 'ВКонтакте', cls: 'social--vk', icon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.7 17h1.2c.4 0 .6-.2.6-.6 0-.7.4-1.3 1-1.3.7 0 1.5 1.6 2.4 2 .3.1.7-.1.8-.5l.4-1.4c.1-.4-.1-.7-.5-.8l-2-.9c-.6-.3-.5-.7 0-1.4 1.2-1.6 2.5-3.4 2-3.9-.3-.3-1.7-.2-3.2-.2-.4 0-.7.2-.9.6-.7 1.5-2 3.4-2.5 3.4-.5 0-.6-2.4-.6-3.4 0-.4-.4-.6-.7-.6H7.6c-.4 0-.7.3-.7.6 0 1.4 1.6 2 1.6 4.2 0 1-.2 1.7-.7 1.7-1 0-2.3-2.5-3-4.6-.1-.3-.4-.6-.8-.6H2c-.4 0-.7.3-.6.7C2.5 13 6 17 12.7 17z"/></svg>' },
+        { key: 'social_instagram', name: 'Instagram', cls: 'social--inst', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>' },
+        { key: 'social_youtube', name: 'YouTube', cls: 'social--yt', icon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 7s-.2-1.5-.9-2.2c-.8-.8-1.7-.8-2.1-.9C16.9 3.6 12 3.6 12 3.6s-4.9 0-8 .3c-.4.1-1.3.1-2.1.9C1.2 5.5 1 7 1 7S.7 8.8.7 10.5v1.5c0 1.7.3 3.5.3 3.5s.2 1.5.9 2.2c.8.8 1.9.8 2.4.9 1.7.2 7.7.3 7.7.3s4.9 0 8-.3c.4-.1 1.3-.1 2.1-.9.7-.7.9-2.2.9-2.2s.3-1.8.3-3.5v-1.5C23.3 8.8 23 7 23 7zM9.7 14.5V8.4l6.4 3.1-6.4 3z"/></svg>' },
+        { key: 'social_tiktok', name: 'TikTok', cls: 'social--tt', icon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.88 2.89 2.89 0 01-2.88-2.88 2.89 2.89 0 012.88-2.88c.28 0 .56.04.82.1v-3.5a6.37 6.37 0 00-.82-.05A6.34 6.34 0 003.15 15.7a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V9.4a8.16 8.16 0 004.76 1.52v-3.4a4.85 4.85 0 01-1-.83z"/></svg>' }
+    ];
+
+    const html = socials
+        .filter(s => siteSettings[s.key])
+        .map(s => `<a href="${escAttr(siteSettings[s.key])}" class="social ${s.cls}" aria-label="${s.name}" target="_blank" rel="noopener">${s.icon}<span>${s.name}</span></a>`)
+        .join('');
+
+    container.innerHTML = html || '<p style="color:#5a4756">Соцсети не настроены</p>';
+}
+
+// ===== Рендер QR-блока из настроек =====
+function renderTgQr() {
+    const tgLink = document.querySelector('.tg-qr__text .btn--primary');
+    const tgUsername = document.querySelector('.tg-qr__code p');
+    const tgQrImg = document.querySelector('.tg-qr__code img');
+
+    if (tgLink && siteSettings.telegram_channel) {
+        tgLink.href = siteSettings.telegram_channel;
+    }
+    if (tgUsername && siteSettings.telegram_username) {
+        tgUsername.textContent = siteSettings.telegram_username;
+    }
+    if (tgQrImg) {
+        if (siteSettings.qr_image) {
+            tgQrImg.src = siteSettings.qr_image;
+        } else if (siteSettings.telegram_channel) {
+            tgQrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(siteSettings.telegram_channel)}&color=2a1a2e&bgcolor=fdf6f0&margin=2`;
+        }
+    }
+}
+
+// ===== Рендер ссылок в футере из настроек =====
+function renderFooterLinks() {
+    // Платформы
+    const footerLinks = document.querySelectorAll('.footer__col a');
+    footerLinks.forEach(link => {
+        if (link.textContent.includes('Литнет') && siteSettings.platform_litnet) {
+            link.href = siteSettings.platform_litnet;
+        }
+        if (link.textContent.includes('ЛитГород') && siteSettings.platform_litgorod) {
+            link.href = siteSettings.platform_litgorod;
+        }
+        if (link.textContent.includes('Telegram') && siteSettings.telegram_channel) {
+            link.href = siteSettings.telegram_channel;
+        }
+        if (link.href && link.href.includes('mailto:') && siteSettings.contact_email) {
+            link.href = 'mailto:' + siteSettings.contact_email;
+            link.textContent = siteSettings.contact_email;
+        }
+    });
+}
+
 // ===== Инициализация =====
 loadBooks();
 loadPosts();
+loadSettings();
 
 // ===== Модальное окно книги =====
 const modal = document.getElementById('modal');
