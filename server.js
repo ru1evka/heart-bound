@@ -3,19 +3,25 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const multer = require('multer');
-const initSqlJs = require('sql.js');
+const { createClient } = require('@libsql/client');
 
 const PORT = process.env.PORT || 3000;
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data.db');
 const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, 'uploads');
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
-// Создаём папку для загрузок
+// ===== Настройки авторизации =====
+const ADMIN_LOGIN = process.env.ADMIN_LOGIN || 'admin';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'romance2026';
+const SESSION_TTL = 24 * 60 * 60 * 1000;
+const sessions = new Map();
+
+// ===== Создаём папку для загрузок =====
 if (!fs.existsSync(UPLOADS_DIR)) {
     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
-// ===== Настройка multer для загрузки файлов =====
+// ===== Multer =====
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, UPLOADS_DIR),
     filename: (req, file, cb) => {
@@ -24,208 +30,135 @@ const storage = multer.diskStorage({
         cb(null, name);
     }
 });
-
 const fileFilter = (req, file, cb) => {
     const allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.mp4', '.webm'];
     const ext = path.extname(file.originalname).toLowerCase();
-    if (allowed.includes(ext)) {
-        cb(null, true);
-    } else {
-        cb(new Error('Недопустимый формат файла'), false);
-    }
+    cb(null, allowed.includes(ext));
 };
+const upload = multer({ storage, fileFilter, limits: { fileSize: 50 * 1024 * 1024 } });
 
-const upload = multer({
-    storage,
-    fileFilter,
-    limits: { fileSize: 50 * 1024 * 1024 } // 50 МБ макс
-});
-
-// ===== Настройки авторизации =====
-const ADMIN_LOGIN = process.env.ADMIN_LOGIN || 'admin';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'romance2026';
-const SESSION_TTL = 24 * 60 * 60 * 1000; // 24 часа
-
-// Хранилище сессий
-const sessions = new Map();
-
-// ===== База данных =====
-let db = null;
+// ===== База данных (libSQL — работает и локально, и с Turso) =====
+let db;
 let dbReady = false;
+
+function createDB() {
+    // Если TURSO_URL задан — подключаемся к облачной БД Turso
+    // Иначе — используем локальный файл SQLite
+    if (process.env.TURSO_URL) {
+        db = createClient({
+            url: process.env.TURSO_URL,
+            authToken: process.env.TURSO_AUTH_TOKEN || ''
+        });
+        console.log('  ✓ Подключение к Turso:', process.env.TURSO_URL);
+    } else {
+        db = createClient({ url: 'file:' + DB_PATH });
+        console.log('  ✓ Локальная БД:', DB_PATH);
+    }
+}
 
 async function initDB() {
     try {
-        const SQL = await initSqlJs();
-
-        if (fs.existsSync(DB_PATH)) {
-            const buffer = fs.readFileSync(DB_PATH);
-            db = new SQL.Database(buffer);
-            console.log('  ✓ БД загружена из файла');
-        } else {
-            db = new SQL.Database();
-            console.log('  ✓ Создана новая БД');
-        }
+        createDB();
 
         // Создаём таблицы
-        db.run(`
-            CREATE TABLE IF NOT EXISTS books (
-                id TEXT PRIMARY KEY,
-                title TEXT NOT NULL,
-                genre TEXT DEFAULT '',
-                badge TEXT DEFAULT '',
-                description TEXT DEFAULT '',
-                prologue TEXT DEFAULT '',
-                litnet TEXT DEFAULT 'https://litnet.com/',
-                litgorod TEXT DEFAULT 'https://litgorod.ru/',
-                litres TEXT DEFAULT '',
-                btn_type TEXT DEFAULT 'buy',
-                cover TEXT DEFAULT '',
-                color TEXT DEFAULT '#9a3f55',
-                sort_order INTEGER DEFAULT 0,
-                created_at TEXT DEFAULT (datetime('now'))
-            )
-        `);
+        await db.execute(`CREATE TABLE IF NOT EXISTS books (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            genre TEXT DEFAULT '',
+            badge TEXT DEFAULT '',
+            description TEXT DEFAULT '',
+            prologue TEXT DEFAULT '',
+            litnet TEXT DEFAULT '',
+            litgorod TEXT DEFAULT '',
+            litres TEXT DEFAULT '',
+            btn_type TEXT DEFAULT 'buy',
+            cover TEXT DEFAULT '',
+            color TEXT DEFAULT '#9a3f55',
+            sort_order INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now'))
+        )`);
 
-        db.run(`
-            CREATE TABLE IF NOT EXISTS posts (
-                id TEXT PRIMARY KEY,
-                title TEXT NOT NULL,
-                date TEXT DEFAULT '',
-                content TEXT DEFAULT '',
-                link TEXT DEFAULT '#',
-                created_at TEXT DEFAULT (datetime('now'))
-            )
-        `);
+        await db.execute(`CREATE TABLE IF NOT EXISTS posts (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            date TEXT DEFAULT '',
+            content TEXT DEFAULT '',
+            link TEXT DEFAULT '#',
+            created_at TEXT DEFAULT (datetime('now'))
+        )`);
 
-        db.run(`
-            CREATE TABLE IF NOT EXISTS settings (
-                key TEXT PRIMARY KEY,
-                value TEXT DEFAULT ''
-            )
-        `);
+        await db.execute(`CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT DEFAULT ''
+        )`);
 
-        // Дефолтные настройки соцсетей и QR
-        const settingsCount = db.exec("SELECT COUNT(*) FROM settings")[0].values[0][0];
-        if (settingsCount === 0) seedSettings();
+        // Миграции для существующих БД
+        const migrations = [
+            `ALTER TABLE books ADD COLUMN litres TEXT DEFAULT ''`,
+            `ALTER TABLE books ADD COLUMN btn_type TEXT DEFAULT 'buy'`
+        ];
+        for (const sql of migrations) {
+            try { await db.execute(sql); } catch (e) { /* уже есть */ }
+        }
 
-        // Миграция: добавляем колонку litres если её нет
-        try { db.run(`ALTER TABLE books ADD COLUMN litres TEXT DEFAULT ''`); } catch (e) { /* уже есть */ }
-        // Миграция: добавляем btn_type если нет
-        try { db.run(`ALTER TABLE books ADD COLUMN btn_type TEXT DEFAULT 'buy'`); } catch (e) { /* уже есть */ }
-        // Миграция: добавляем новые настройки если нет
+        // Seed если пусто
+        const bookCount = (await db.execute('SELECT COUNT(*) as c FROM books')).rows[0].c;
+        if (bookCount === 0) await seedBooks();
+
+        const postCount = (await db.execute('SELECT COUNT(*) as c FROM posts')).rows[0].c;
+        if (postCount === 0) await seedPosts();
+
+        const settingsCount = (await db.execute('SELECT COUNT(*) as c FROM settings')).rows[0].c;
+        if (settingsCount === 0) await seedSettings();
+
+        // Добавляем новые настройки если их нет
         const newSettings = ['social_dzen', 'platform_litres', 'author_name', 'author_text1', 'author_text2', 'author_photo'];
-        newSettings.forEach(key => {
-            try { db.run(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, '')`, [key]); } catch (e) { /* ok */ }
-        });
+        for (const key of newSettings) {
+            await db.execute({ sql: `INSERT OR IGNORE INTO settings (key, value) VALUES (?, '')`, args: [key] });
+        }
 
-        // Заполняем дефолтными данными если пусто
-        const bookCount = db.exec("SELECT COUNT(*) FROM books")[0].values[0][0];
-        if (bookCount === 0) seedBooks();
-
-        const postCount = db.exec("SELECT COUNT(*) FROM posts")[0].values[0][0];
-        if (postCount === 0) seedPosts();
-
-        saveDB();
         dbReady = true;
         console.log('  ✓ БД инициализирована');
     } catch (err) {
         console.error('  ✗ Ошибка инициализации БД:', err.message);
-        // Пробуем создать чистую БД
-        try {
-            const SQL = await initSqlJs();
-            db = new SQL.Database();
-            db.run(`CREATE TABLE IF NOT EXISTS books (id TEXT PRIMARY KEY, title TEXT NOT NULL, genre TEXT DEFAULT '', badge TEXT DEFAULT '', description TEXT DEFAULT '', prologue TEXT DEFAULT '', litnet TEXT DEFAULT '', litgorod TEXT DEFAULT '', litres TEXT DEFAULT '', btn_type TEXT DEFAULT 'buy', cover TEXT DEFAULT '', color TEXT DEFAULT '#9a3f55', sort_order INTEGER DEFAULT 0, created_at TEXT DEFAULT (datetime('now')))`);
-            db.run(`CREATE TABLE IF NOT EXISTS posts (id TEXT PRIMARY KEY, title TEXT NOT NULL, date TEXT DEFAULT '', content TEXT DEFAULT '', link TEXT DEFAULT '#', created_at TEXT DEFAULT (datetime('now')))`);
-            seedBooks();
-            seedPosts();
-            saveDB();
-            dbReady = true;
-            console.log('  ✓ БД пересоздана с нуля');
-        } catch (e2) {
-            console.error('  ✗ Критическая ошибка БД:', e2.message);
-        }
     }
 }
 
-function saveDB() {
-    try {
-        if (!db) return;
-        const data = db.export();
-        const buffer = Buffer.from(data);
-        fs.writeFileSync(DB_PATH, buffer);
-    } catch (err) {
-        console.error('Ошибка сохранения БД:', err.message);
-    }
-}
-
-// Периодическое сохранение БД (каждые 5 минут)
-setInterval(() => {
-    if (dbReady) saveDB();
-}, 5 * 60 * 1000);
-
-function seedBooks() {
+async function seedBooks() {
     const books = [
-        { id: '1', title: 'Шёпот зимних роз', genre: 'Современный роман · Драма', badge: 'Новинка', description: 'Она искала тишину в заснеженном поместье. Он принёс с собой бурю.', prologue: 'Снег падал так тихо, что казалось — вселенная задержала дыхание. Лилит стояла у окна старого поместья и смотрела, как белые лепестки укрывают сад. Где-то там, под снегом, спали зимние розы — единственное, что согревало её в эту ночь.\n\nКамин потрескивал за её спиной. Часы в гостиной пробили полночь. И именно в этот миг во дворе, среди вьюги, появился силуэт — высокий, тёмный, чужой.\n\n«Он не должен был приехать», — прошептала она, прижимая ладонь к холодному стеклу. Но сердце уже знало: с этой минуты её тихая жизнь закончилась.', litnet: 'https://litnet.com/', litgorod: 'https://litgorod.ru/', cover: 'assets/book1.jpg.svg', color: '#1a2440', sort_order: 1 },
-        { id: '2', title: 'Под светом южных звёзд', genre: 'Романтика · Путешествия', badge: 'Бестселлер', description: 'Случайная встреча в Лиссабоне, которая изменила всё.', prologue: 'Лиссабон встретил её ароматом моря и кофе. София шла по узкой улочке Альфамы, где фасады домов цвета охры спорили с синевой азулежу. Чемодан стучал по брусчатке, в груди стучало сердце — громче, чем нужно.\n\nНа углу маленького кафе она едва не столкнулась с ним. Высокий, в льняной рубашке, с книгой в руке. Их взгляды встретились на одно мгновение — и этого хватило.\n\n«Desculpe», — сказал он по-португальски. А потом добавил по-русски, с тёплой усмешкой: «Простите». И в этот момент София поняла: ни один её план на это лето уже не сбудется.', litnet: 'https://litnet.com/', litgorod: 'https://litgorod.ru/', cover: 'assets/book2.jpg.svg', color: '#ff8a5b', sort_order: 2 },
-        { id: '3', title: 'Письма, которых не было', genre: 'Исторический роман', badge: '', description: 'Сто лет молчания и одно признание, способное всё перевернуть.', prologue: 'В пыльном чердаке бабушкиного дома Аня нашла шкатулку из вишнёвого дерева. Замок поддался с тихим щелчком — словно ждал её сто лет.\n\nВнутри лежали письма. Перевязанные выцветшей лентой, написанные чернилами, которые местами расплывались — то ли от времени, то ли от слёз. На первом конверте значилось: «Елене. Если ты когда-нибудь это прочитаешь — знай, я любил».\n\nАня осторожно развернула лист. Прочитала первую строку — и поняла, что бабушкина история была совсем не такой, как ей рассказывали.', litnet: 'https://litnet.com/', litgorod: 'https://litgorod.ru/', cover: 'assets/book3.jpg.svg', color: '#3a2818', sort_order: 3 },
-        { id: '4', title: 'Танец на грани рассвета', genre: 'Городское фэнтези · Любовь', badge: 'Скоро', description: 'Между двумя мирами стоит лишь её сердце.', prologue: 'Город никогда не спал. Под неоновым дождём, между мирами, в час, когда звёзды стираются с неба, Эва выходила танцевать. Это был её ритуал — и её проклятие.\n\nСегодня в зал «Полуночи» вошёл он. Не такой, как все. Слишком тихий, слишком пристальный. И когда их взгляды встретились через дым и блики, Эва почувствовала, как реальность дрогнула.\n\n«Ты знаешь, кто я?» — спросил он, протягивая руку. Эва не знала. Но она шагнула навстречу.', litnet: 'https://litnet.com/', litgorod: 'https://litgorod.ru/', cover: 'assets/book4.jpg.svg', color: '#0a0a2a', sort_order: 4 }
+        { id: '1', title: 'Шёпот зимних роз', genre: 'Современный роман · Драма', badge: 'Новинка', description: 'Она искала тишину в заснеженном поместье. Он принёс с собой бурю.', prologue: 'Снег падал так тихо, что казалось — вселенная задержала дыхание...', litnet: '', litgorod: '', litres: '', btn_type: 'buy', cover: 'assets/book1.jpg.svg', color: '#1a2440', sort_order: 1 },
+        { id: '2', title: 'Под светом южных звёзд', genre: 'Романтика · Путешествия', badge: 'Бестселлер', description: 'Случайная встреча в Лиссабоне, которая изменила всё.', prologue: 'Лиссабон встретил её ароматом моря и кофе...', litnet: '', litgorod: '', litres: '', btn_type: 'buy', cover: 'assets/book2.jpg.svg', color: '#ff8a5b', sort_order: 2 },
+        { id: '3', title: 'Письма, которых не было', genre: 'Исторический роман', badge: '', description: 'Сто лет молчания и одно признание.', prologue: 'В пыльном чердаке бабушкиного дома Аня нашла шкатулку...', litnet: '', litgorod: '', litres: '', btn_type: 'buy', cover: 'assets/book3.jpg.svg', color: '#3a2818', sort_order: 3 },
+        { id: '4', title: 'Танец на грани рассвета', genre: 'Городское фэнтези · Любовь', badge: 'Скоро', description: 'Между двумя мирами стоит лишь её сердце.', prologue: 'Город никогда не спал...', litnet: '', litgorod: '', litres: '', btn_type: 'buy', cover: 'assets/book4.jpg.svg', color: '#0a0a2a', sort_order: 4 }
     ];
-    const stmt = db.prepare(`INSERT INTO books (id, title, genre, badge, description, prologue, litnet, litgorod, litres, btn_type, cover, color, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-    books.forEach(b => { stmt.run([b.id, b.title, b.genre, b.badge, b.description, b.prologue, b.litnet, b.litgorod, b.litres || '', b.btn_type || 'buy', b.cover, b.color, b.sort_order]); });
-    stmt.free();
+    for (const b of books) {
+        await db.execute({ sql: `INSERT INTO books (id, title, genre, badge, description, prologue, litnet, litgorod, litres, btn_type, cover, color, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, args: [b.id, b.title, b.genre, b.badge, b.description, b.prologue, b.litnet, b.litgorod, b.litres, b.btn_type, b.cover, b.color, b.sort_order] });
+    }
 }
 
-function seedPosts() {
+async function seedPosts() {
     const posts = [
-        { id: '1', title: 'Как рождалась героиня «Шёпота зимних роз»', date: '2026-05-12', content: 'Иногда персонаж сам стучится в дверь. Расскажу, как Лилит появилась из одного зимнего вечера и чашки горячего какао.', link: '#' },
-        { id: '2', title: 'Лиссабон, который вы не знали', date: '2026-04-28', content: 'Маленькие улочки, синяя плитка азулежу и кафе, где я писала «Под светом южных звёзд». Личный гид.', link: '#' },
-        { id: '3', title: 'Плейлист для романтических вечеров', date: '2026-04-05', content: 'Музыка, под которую пишутся самые трогательные сцены. Делюсь моими треками для долгих чтений.', link: '#' }
+        { id: '1', title: 'Как рождалась героиня', date: '2026-05-12', content: 'Иногда персонаж сам стучится в дверь...', link: '#' },
+        { id: '2', title: 'Лиссабон, который вы не знали', date: '2026-04-28', content: 'Маленькие улочки, синяя плитка азулежу...', link: '#' },
+        { id: '3', title: 'Плейлист для романтических вечеров', date: '2026-04-05', content: 'Музыка, под которую пишутся самые трогательные сцены.', link: '#' }
     ];
-    const stmt = db.prepare(`INSERT INTO posts (id, title, date, content, link) VALUES (?, ?, ?, ?, ?)`);
-    posts.forEach(p => { stmt.run([p.id, p.title, p.date, p.content, p.link]); });
-    stmt.free();
+    for (const p of posts) {
+        await db.execute({ sql: `INSERT INTO posts (id, title, date, content, link) VALUES (?, ?, ?, ?, ?)`, args: [p.id, p.title, p.date, p.content, p.link] });
+    }
 }
 
-function seedSettings() {
+async function seedSettings() {
     const defaults = {
-        'social_telegram': 'https://t.me/RenaRud',
-        'social_vk': '',
-        'social_instagram': '',
-        'social_youtube': '',
-        'social_tiktok': '',
-        'social_dzen': '',
-        'telegram_channel': 'https://t.me/RenaRud',
-        'telegram_username': '@RenaRud',
-        'qr_image': '',
-        'platform_litnet': 'https://litnet.com/ru/rena-rud-u3659590',
-        'platform_litgorod': 'https://litgorod.ru/profile/680841/books',
-        'platform_litres': '',
-        'contact_email': 'hello@heart-book.ru',
-        'author_name': 'Рена Руд',
-        'author_text1': 'Мой писательский путь начался чуть больше года назад, и, несмотря на серьёзную конкуренцию, я уверенно двигаюсь вперёд. Мои книги можно найти на «Литнет» и «ЛитГород», немного — на «Литрес».',
-        'author_text2': 'Пишу молодёжные, современные и женские романы с уклоном в драму. Сейчас учусь разбираться и в других жанрах — пока для себя, но кто знает, что будет дальше!?',
-        'author_photo': 'assets/avatar_2_kopia.png'
+        social_telegram: 'https://t.me/RenaRud', social_vk: '', social_instagram: '', social_youtube: '', social_tiktok: '', social_dzen: '',
+        telegram_channel: 'https://t.me/RenaRud', telegram_username: '@RenaRud', qr_image: '',
+        platform_litnet: 'https://litnet.com/ru/rena-rud-u3659590', platform_litgorod: 'https://litgorod.ru/profile/680841/books', platform_litres: '',
+        contact_email: '', author_name: 'Рена Руд',
+        author_text1: 'Мой писательский путь начался чуть больше года назад.',
+        author_text2: 'Пишу молодёжные, современные и женские романы с уклоном в драму.',
+        author_photo: 'assets/avatar_2_kopia.png'
     };
-    const stmt = db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`);
-    Object.entries(defaults).forEach(([k, v]) => { stmt.run([k, v]); });
-    stmt.free();
-}
-
-// ===== Хелпер: получить все строки из запроса =====
-function queryAll(sql, params = []) {
-    if (!db) return [];
-    try {
-        const stmt = db.prepare(sql);
-        if (params.length) stmt.bind(params);
-        const rows = [];
-        while (stmt.step()) {
-            rows.push(stmt.getAsObject());
-        }
-        stmt.free();
-        return rows;
-    } catch (err) {
-        console.error('Ошибка запроса:', sql, err.message);
-        return [];
+    for (const [key, value] of Object.entries(defaults)) {
+        await db.execute({ sql: `INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`, args: [key, value] });
     }
 }
 
@@ -233,92 +166,61 @@ function queryAll(sql, params = []) {
 const app = express();
 app.use(express.json());
 
-// ===== Health check (для Render и мониторинга) =====
+// ===== Health check =====
 app.get('/api/health', (req, res) => {
-    res.json({
-        status: dbReady ? 'ok' : 'starting',
-        uptime: Math.floor(process.uptime()),
-        memory: Math.round(process.memoryUsage().rss / 1024 / 1024) + ' MB'
-    });
+    res.json({ status: dbReady ? 'ok' : 'starting', uptime: Math.floor(process.uptime()) });
 });
 
-// ===== No-cache для всех API-ответов =====
+// ===== No-cache для API =====
 app.use('/api', (req, res, next) => {
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
     next();
 });
 
-// ===== Middleware: проверка готовности БД =====
+// ===== Middleware =====
 function requireDB(req, res, next) {
-    if (!dbReady) {
-        return res.status(503).json({ error: 'Сервер запускается, подождите...' });
-    }
+    if (!dbReady) return res.status(503).json({ error: 'Сервер запускается...' });
     next();
-}
-
-// ===== Авторизация =====
-function generateToken() {
-    return crypto.randomBytes(48).toString('hex');
 }
 
 function parseCookies(req) {
     const cookies = {};
-    const header = req.headers.cookie || '';
-    header.split(';').forEach(c => {
-        const [key, ...val] = c.trim().split('=');
-        if (key) cookies[key] = val.join('=');
-    });
+    (req.headers.cookie || '').split(';').forEach(c => { const [k, ...v] = c.trim().split('='); if (k) cookies[k] = v.join('='); });
     return cookies;
 }
 
 function getToken(req) {
-    return req.headers['authorization']?.replace('Bearer ', '') ||
-           req.query.token ||
-           parseCookies(req)['admin_token'];
+    return req.headers['authorization']?.replace('Bearer ', '') || req.query.token || parseCookies(req)['admin_token'];
 }
 
 function isAuthenticated(req) {
     const token = getToken(req);
     if (!token || !sessions.has(token)) return false;
-    const session = sessions.get(token);
-    if (Date.now() > session.expires) {
-        sessions.delete(token);
-        return false;
-    }
+    if (Date.now() > sessions.get(token).expires) { sessions.delete(token); return false; }
     return true;
 }
 
 function authMiddleware(req, res, next) {
-    if (!isAuthenticated(req)) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
+    if (!isAuthenticated(req)) return res.status(401).json({ error: 'Unauthorized' });
     next();
 }
 
-// --- Логин ---
+// ===== Auth API =====
 app.post('/api/auth/login', (req, res) => {
     const { login, password } = req.body || {};
     if (login === ADMIN_LOGIN && password === ADMIN_PASSWORD) {
-        const token = generateToken();
+        const token = crypto.randomBytes(48).toString('hex');
         sessions.set(token, { expires: Date.now() + SESSION_TTL });
-        // Очищаем старые сессии
-        for (const [t, s] of sessions) {
-            if (Date.now() > s.expires) sessions.delete(t);
-        }
+        for (const [t, s] of sessions) { if (Date.now() > s.expires) sessions.delete(t); }
         res.setHeader('Set-Cookie', `admin_token=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${Math.floor(SESSION_TTL / 1000)}`);
         return res.json({ success: true, token });
     }
     res.status(401).json({ error: 'Неверный логин или пароль' });
 });
 
-// --- Проверка сессии ---
-app.get('/api/auth/check', (req, res) => {
-    res.json({ authenticated: isAuthenticated(req) });
-});
+app.get('/api/auth/check', (req, res) => { res.json({ authenticated: isAuthenticated(req) }); });
 
-// --- Выход ---
 app.post('/api/auth/logout', (req, res) => {
     const token = parseCookies(req)['admin_token'];
     if (token) sessions.delete(token);
@@ -332,264 +234,165 @@ app.get('/admin.html', (req, res, next) => {
     res.sendFile(path.join(__dirname, 'login.html'));
 });
 
-// Статика — без кеширования HTML, короткий кеш для ассетов
+// ===== Статика =====
 app.use(express.static(__dirname, {
-    etag: true,
-    lastModified: true,
+    etag: true, lastModified: true,
     setHeaders: (res, filePath) => {
-        // HTML файлы — всегда проверять актуальность
-        if (filePath.endsWith('.html')) {
-            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-            res.setHeader('Pragma', 'no-cache');
-            res.setHeader('Expires', '0');
-        }
-        // CSS и JS — короткий кеш с обязательной ревалидацией
-        else if (filePath.endsWith('.css') || filePath.endsWith('.js')) {
-            res.setHeader('Cache-Control', 'no-cache, must-revalidate');
-        }
-        // Картинки и видео — можно кешировать подольше
-        else if (/\.(jpg|jpeg|png|gif|svg|webp|mp4|webm|ico)$/i.test(filePath)) {
-            res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 день
-        }
+        if (filePath.endsWith('.html')) { res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate'); }
+        else if (filePath.endsWith('.css') || filePath.endsWith('.js')) { res.setHeader('Cache-Control', 'no-cache, must-revalidate'); }
+        else if (/\.(jpg|jpeg|png|gif|svg|webp|mp4|webm|ico)$/i.test(filePath)) { res.setHeader('Cache-Control', 'public, max-age=86400'); }
     }
 }));
 
 // ===== API: Книги =====
-app.get('/api/books', requireDB, (req, res) => {
+app.get('/api/books', requireDB, async (req, res) => {
     try {
-        const books = queryAll('SELECT * FROM books ORDER BY sort_order ASC, created_at ASC');
-        res.json(books);
-    } catch (err) {
-        res.status(500).json({ error: 'Ошибка загрузки книг' });
-    }
+        const result = await db.execute('SELECT * FROM books ORDER BY sort_order ASC, created_at ASC');
+        res.json(result.rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.get('/api/books/:id', requireDB, (req, res) => {
+app.get('/api/books/:id', requireDB, async (req, res) => {
     try {
-        const rows = queryAll('SELECT * FROM books WHERE id = ?', [req.params.id]);
-        if (rows.length === 0) return res.status(404).json({ error: 'Not found' });
-        res.json(rows[0]);
-    } catch (err) {
-        res.status(500).json({ error: 'Ошибка' });
-    }
+        const result = await db.execute({ sql: 'SELECT * FROM books WHERE id = ?', args: [req.params.id] });
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+        res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/books', authMiddleware, requireDB, (req, res) => {
+app.post('/api/books', authMiddleware, requireDB, async (req, res) => {
     try {
         const { title, genre, badge, description, prologue, litnet, litgorod, litres, btn_type, cover, color } = req.body;
         const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-        const maxOrder = queryAll('SELECT MAX(sort_order) as m FROM books')[0]?.m || 0;
-        db.run(`INSERT INTO books (id, title, genre, badge, description, prologue, litnet, litgorod, litres, btn_type, cover, color, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [id, title || '', genre || '', badge || '', description || '', prologue || '', litnet || '', litgorod || '', litres || '', btn_type || 'buy', cover || '', color || '#9a3f55', maxOrder + 1]);
-        saveDB();
+        const maxResult = await db.execute('SELECT MAX(sort_order) as m FROM books');
+        const maxOrder = maxResult.rows[0]?.m || 0;
+        await db.execute({ sql: `INSERT INTO books (id, title, genre, badge, description, prologue, litnet, litgorod, litres, btn_type, cover, color, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            args: [id, title||'', genre||'', badge||'', description||'', prologue||'', litnet||'', litgorod||'', litres||'', btn_type||'buy', cover||'', color||'#9a3f55', maxOrder+1] });
         res.json({ id, success: true });
-    } catch (err) {
-        res.status(500).json({ error: 'Ошибка создания книги: ' + err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.put('/api/books/:id', authMiddleware, requireDB, (req, res) => {
+app.put('/api/books/:id', authMiddleware, requireDB, async (req, res) => {
     try {
         const { title, genre, badge, description, prologue, litnet, litgorod, litres, btn_type, cover, color } = req.body;
-        const current = queryAll('SELECT * FROM books WHERE id = ?', [req.params.id])[0];
-        if (!current) return res.status(404).json({ error: 'Not found' });
-        db.run(`UPDATE books SET title=?, genre=?, badge=?, description=?, prologue=?, litnet=?, litgorod=?, litres=?, btn_type=?, cover=?, color=? WHERE id=?`,
-            [
-                title !== undefined ? title : current.title,
-                genre !== undefined ? genre : current.genre,
-                badge !== undefined ? badge : current.badge,
-                description !== undefined ? description : current.description,
-                prologue !== undefined ? prologue : current.prologue,
-                litnet !== undefined ? litnet : current.litnet,
-                litgorod !== undefined ? litgorod : current.litgorod,
-                litres !== undefined ? litres : current.litres,
-                btn_type !== undefined ? btn_type : (current.btn_type || 'buy'),
-                cover !== undefined ? cover : current.cover,
-                color !== undefined ? color : (current.color || '#9a3f55'),
-                req.params.id
-            ]);
-        saveDB();
+        const cur = (await db.execute({ sql: 'SELECT * FROM books WHERE id = ?', args: [req.params.id] })).rows[0];
+        if (!cur) return res.status(404).json({ error: 'Not found' });
+        await db.execute({ sql: `UPDATE books SET title=?, genre=?, badge=?, description=?, prologue=?, litnet=?, litgorod=?, litres=?, btn_type=?, cover=?, color=? WHERE id=?`,
+            args: [title!==undefined?title:cur.title, genre!==undefined?genre:cur.genre, badge!==undefined?badge:cur.badge, description!==undefined?description:cur.description, prologue!==undefined?prologue:cur.prologue, litnet!==undefined?litnet:cur.litnet, litgorod!==undefined?litgorod:cur.litgorod, litres!==undefined?litres:cur.litres, btn_type!==undefined?btn_type:(cur.btn_type||'buy'), cover!==undefined?cover:cur.cover, color!==undefined?color:(cur.color||'#9a3f55'), req.params.id] });
         res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ error: 'Ошибка обновления: ' + err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.delete('/api/books/:id', authMiddleware, requireDB, (req, res) => {
+app.delete('/api/books/:id', authMiddleware, requireDB, async (req, res) => {
     try {
-        db.run('DELETE FROM books WHERE id = ?', [req.params.id]);
-        saveDB();
+        await db.execute({ sql: 'DELETE FROM books WHERE id = ?', args: [req.params.id] });
         res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ error: 'Ошибка удаления: ' + err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // ===== API: Посты =====
-app.get('/api/posts', requireDB, (req, res) => {
+app.get('/api/posts', requireDB, async (req, res) => {
     try {
-        const posts = queryAll('SELECT * FROM posts ORDER BY date DESC, created_at DESC');
-        res.json(posts);
-    } catch (err) {
-        res.status(500).json({ error: 'Ошибка загрузки постов' });
-    }
+        const result = await db.execute('SELECT * FROM posts ORDER BY date DESC, created_at DESC');
+        res.json(result.rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.get('/api/posts/:id', requireDB, (req, res) => {
+app.get('/api/posts/:id', requireDB, async (req, res) => {
     try {
-        const rows = queryAll('SELECT * FROM posts WHERE id = ?', [req.params.id]);
-        if (rows.length === 0) return res.status(404).json({ error: 'Not found' });
-        res.json(rows[0]);
-    } catch (err) {
-        res.status(500).json({ error: 'Ошибка' });
-    }
+        const result = await db.execute({ sql: 'SELECT * FROM posts WHERE id = ?', args: [req.params.id] });
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+        res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/posts', authMiddleware, requireDB, (req, res) => {
+app.post('/api/posts', authMiddleware, requireDB, async (req, res) => {
     try {
         const { title, date, content, link } = req.body;
         const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-        db.run(`INSERT INTO posts (id, title, date, content, link) VALUES (?, ?, ?, ?, ?)`,
-            [id, title || '', date || new Date().toISOString().slice(0, 10), content || '', link || '#']);
-        saveDB();
+        await db.execute({ sql: `INSERT INTO posts (id, title, date, content, link) VALUES (?, ?, ?, ?, ?)`,
+            args: [id, title||'', date||new Date().toISOString().slice(0,10), content||'', link||'#'] });
         res.json({ id, success: true });
-    } catch (err) {
-        res.status(500).json({ error: 'Ошибка создания поста: ' + err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.put('/api/posts/:id', authMiddleware, requireDB, (req, res) => {
+app.put('/api/posts/:id', authMiddleware, requireDB, async (req, res) => {
     try {
         const { title, date, content, link } = req.body;
-        db.run(`UPDATE posts SET title=?, date=?, content=?, link=? WHERE id=?`,
-            [title || '', date || '', content || '', link || '#', req.params.id]);
-        saveDB();
+        await db.execute({ sql: `UPDATE posts SET title=?, date=?, content=?, link=? WHERE id=?`,
+            args: [title||'', date||'', content||'', link||'#', req.params.id] });
         res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ error: 'Ошибка обновления: ' + err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.delete('/api/posts/:id', authMiddleware, requireDB, (req, res) => {
+app.delete('/api/posts/:id', authMiddleware, requireDB, async (req, res) => {
     try {
-        db.run('DELETE FROM posts WHERE id = ?', [req.params.id]);
-        saveDB();
+        await db.execute({ sql: 'DELETE FROM posts WHERE id = ?', args: [req.params.id] });
         res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ error: 'Ошибка удаления: ' + err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ===== API: Настройки =====
+app.get('/api/settings', requireDB, async (req, res) => {
+    try {
+        const result = await db.execute('SELECT key, value FROM settings');
+        const settings = {};
+        result.rows.forEach(r => { settings[r.key] = r.value; });
+        res.json(settings);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.put('/api/settings', authMiddleware, requireDB, async (req, res) => {
+    try {
+        const settings = req.body;
+        for (const [key, value] of Object.entries(settings)) {
+            await db.execute({ sql: `INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`, args: [key, value || ''] });
+        }
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // ===== API: Загрузка файлов =====
 app.post('/api/upload', authMiddleware, (req, res) => {
     upload.single('file')(req, res, (err) => {
-        if (err) {
-            if (err instanceof multer.MulterError) {
-                return res.status(400).json({ error: 'Файл слишком большой (макс 50 МБ)' });
-            }
-            return res.status(400).json({ error: err.message || 'Ошибка загрузки' });
-        }
-        if (!req.file) {
-            return res.status(400).json({ error: 'Файл не выбран' });
-        }
-        const fileUrl = '/uploads/' + req.file.filename;
-        res.json({ success: true, url: fileUrl, filename: req.file.filename });
+        if (err) return res.status(400).json({ error: err.message || 'Ошибка загрузки' });
+        if (!req.file) return res.status(400).json({ error: 'Файл не выбран' });
+        res.json({ success: true, url: '/uploads/' + req.file.filename, filename: req.file.filename });
     });
 });
 
-// Раздача загруженных файлов
 app.use('/uploads', express.static(UPLOADS_DIR, { maxAge: '7d' }));
 
-// ===== API: Настройки (соцсети, QR, платформы) =====
-app.get('/api/settings', requireDB, (req, res) => {
-    try {
-        const rows = queryAll('SELECT key, value FROM settings');
-        const settings = {};
-        rows.forEach(r => { settings[r.key] = r.value; });
-        res.json(settings);
-    } catch (err) {
-        res.status(500).json({ error: 'Ошибка загрузки настроек' });
-    }
-});
-
-app.put('/api/settings', authMiddleware, requireDB, (req, res) => {
-    try {
-        const settings = req.body;
-        if (!settings || typeof settings !== 'object') {
-            return res.status(400).json({ error: 'Неверный формат данных' });
-        }
-        Object.entries(settings).forEach(([key, value]) => {
-            db.run(`INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`, [key, value || '']);
-        });
-        saveDB();
-        res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ error: 'Ошибка сохранения настроек: ' + err.message });
-    }
-});
-
-// Удаление загруженного файла
 app.delete('/api/upload/:filename', authMiddleware, (req, res) => {
-    const filename = req.params.filename;
-    const filepath = path.join(UPLOADS_DIR, filename);
-    // Защита от path traversal
-    if (!filepath.startsWith(UPLOADS_DIR)) {
-        return res.status(400).json({ error: 'Недопустимый путь' });
-    }
-    try {
-        if (fs.existsSync(filepath)) {
-            fs.unlinkSync(filepath);
-        }
-        res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ error: 'Ошибка удаления файла' });
-    }
+    const filepath = path.join(UPLOADS_DIR, req.params.filename);
+    if (!filepath.startsWith(UPLOADS_DIR)) return res.status(400).json({ error: 'Недопустимый путь' });
+    try { if (fs.existsSync(filepath)) fs.unlinkSync(filepath); res.json({ success: true }); }
+    catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // ===== Обработка ошибок =====
-app.use((err, req, res, next) => {
-    console.error('Необработанная ошибка:', err.message);
-    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
-});
+app.use((err, req, res, next) => { console.error('Error:', err.message); res.status(500).json({ error: 'Внутренняя ошибка' }); });
+process.on('uncaughtException', (err) => { console.error('UNCAUGHT:', err.message); });
+process.on('unhandledRejection', (reason) => { console.error('UNHANDLED:', reason); });
 
-// ===== Глобальная защита от крашей =====
-process.on('uncaughtException', (err) => {
-    console.error('UNCAUGHT EXCEPTION:', err.message);
-    console.error(err.stack);
-    // Не завершаем процесс — пусть работает дальше
-});
-
-process.on('unhandledRejection', (reason) => {
-    console.error('UNHANDLED REJECTION:', reason);
-});
-
-// ===== Keep-alive: пингуем сами себя каждые 14 минут (чтобы Render не усыплял) =====
+// ===== Keep-alive =====
 function keepAlive() {
-    if (!IS_PRODUCTION) return; // только на продакшене
-    const url = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+    if (!IS_PRODUCTION) return;
+    const url = process.env.RENDER_EXTERNAL_URL;
+    if (!url) return;
     setInterval(() => {
-        const http = require('http');
-        const https = require('https');
-        const client = url.startsWith('https') ? https : http;
-        client.get(`${url}/api/health`, (res) => {
-            // просто пингуем
-        }).on('error', () => {
-            // игнорируем ошибки пинга
-        });
-    }, 14 * 60 * 1000); // каждые 14 минут
+        const client = url.startsWith('https') ? require('https') : require('http');
+        client.get(`${url}/api/health`, () => {}).on('error', () => {});
+    }, 14 * 60 * 1000);
 }
 
 // ===== Запуск =====
 const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n  ❦ Сервер запущен: http://localhost:${PORT}`);
-    console.log(`  ❦ Админ-панель:   http://localhost:${PORT}/admin.html`);
     console.log(`  ❦ Режим: ${IS_PRODUCTION ? 'production' : 'development'}\n`);
     keepAlive();
 });
-
-// Увеличиваем таймауты для стабильности
 server.keepAliveTimeout = 65000;
 server.headersTimeout = 66000;
 
-// Инициализируем БД после запуска сервера (чтобы Render видел, что порт открыт)
 initDB();

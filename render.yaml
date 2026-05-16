@@ -6,17 +6,13 @@ services:
     buildCommand: npm install
     startCommand: node server.js
     healthCheckPath: /api/health
-    disk:
-      name: site-data
-      mountPath: /data
-      sizeGB: 1
     envVars:
       - key: NODE_ENV
         value: production
-      - key: DB_PATH
-        value: /data/data.db
-      - key: UPLOADS_DIR
-        value: /data/uploads
+      - key: TURSO_URL
+        sync: false
+      - key: TURSO_AUTH_TOKEN
+        sync: false
       - key: ADMIN_LOGIN
         sync: false
       - key: ADMIN_PASSWORD
