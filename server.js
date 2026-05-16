@@ -239,6 +239,14 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// ===== No-cache для всех API-ответов =====
+app.use('/api', (req, res, next) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    next();
+});
+
 // ===== Middleware: проверка готовности БД =====
 function requireDB(req, res, next) {
     if (!dbReady) {
@@ -321,10 +329,26 @@ app.get('/admin.html', (req, res, next) => {
     res.sendFile(path.join(__dirname, 'login.html'));
 });
 
-// Статика
+// Статика — без кеширования HTML, короткий кеш для ассетов
 app.use(express.static(__dirname, {
-    maxAge: IS_PRODUCTION ? '1h' : 0,
-    etag: true
+    etag: true,
+    lastModified: true,
+    setHeaders: (res, filePath) => {
+        // HTML файлы — всегда проверять актуальность
+        if (filePath.endsWith('.html')) {
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+        }
+        // CSS и JS — короткий кеш с обязательной ревалидацией
+        else if (filePath.endsWith('.css') || filePath.endsWith('.js')) {
+            res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+        }
+        // Картинки и видео — можно кешировать подольше
+        else if (/\.(jpg|jpeg|png|gif|svg|webp|mp4|webm|ico)$/i.test(filePath)) {
+            res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 день
+        }
+    }
 }));
 
 // ===== API: Книги =====
