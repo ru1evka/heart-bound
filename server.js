@@ -6,8 +6,8 @@ const multer = require('multer');
 const initSqlJs = require('sql.js');
 
 const PORT = process.env.PORT || 3000;
-const DB_PATH = path.join(__dirname, 'data.db');
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data.db');
+const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, 'uploads');
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 // Создаём папку для загрузок
