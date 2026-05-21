@@ -52,53 +52,36 @@ async function loadSettings() {
     renderAuthor();
 }
 
-// ===== Ленивая загрузка обложек (GIF/видео не грузятся до появления в viewport) =====
-const coverLoadObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-        const el = entry.target;
-        const url = el.dataset.src;
-        if (entry.isIntersecting) {
-            if (url) {
-                if (el.tagName === 'VIDEO') {
-                    el.innerHTML = `<source src="${escAttr(url)}" type="video/mp4">`;
-                    el.preload = 'auto';
-                    el.load();
-                    el.play().catch(() => {});
-                    delete el.dataset.src;
-                } else {
-                    el.src = url;
-                    delete el.dataset.src;
-                }
-            }
-            if (el.tagName === 'VIDEO' && el.querySelector('source')) el.play().catch(() => {});
-        } else {
-            if (el.tagName === 'VIDEO') {
-                el.pause();
-            } else if (el.tagName === 'IMG' && el.src && /\.gif$/i.test(el.src)) {
-                el.dataset.src = el.src;
-                el.removeAttribute('src');
-            }
-        }
-    });
-}, { rootMargin: '120px', threshold: 0.01 });
-
-function bookCoverMediaHtml(cover, title) {
-    if (!cover) return '';
-    const isVideo = /\.(mp4|webm)$/i.test(cover);
-    if (isVideo) {
-        return `<video class="book-card__media" muted loop playsinline preload="none" data-src="${escAttr(cover)}" aria-label="${escAttr(title)}"></video>`;
+// ===== Обложки: вписать целиком без обрезки и пустых полей =====
+function fitCoverToMedia(coverEl, mediaEl) {
+    if (!coverEl || !mediaEl) return;
+    const apply = (w, h) => {
+        if (!w || !h) return;
+        coverEl.style.aspectRatio = `${w} / ${h}`;
+    };
+    if (mediaEl.tagName === 'IMG') {
+        const run = () => apply(mediaEl.naturalWidth, mediaEl.naturalHeight);
+        if (mediaEl.complete && mediaEl.naturalWidth) run();
+        else mediaEl.addEventListener('load', run, { once: true });
+    } else if (mediaEl.tagName === 'VIDEO') {
+        const run = () => apply(mediaEl.videoWidth, mediaEl.videoHeight);
+        if (mediaEl.readyState >= 1 && mediaEl.videoWidth) run();
+        else mediaEl.addEventListener('loadedmetadata', run, { once: true });
     }
-    return `<img class="book-card__media" data-src="${escAttr(cover)}" alt="${escAttr(title)}" decoding="async" loading="lazy">`;
 }
 
-function initCoverLazyLoad(root = document) {
-    root.querySelectorAll('.book-card__media[data-src], .book-card__media[src], .book-card__media source').forEach(el => {
-        if (el.tagName === 'SOURCE') el = el.closest('.book-card__media');
-        if (!el) return;
-        if (el.dataset.lazyBound) return;
-        el.dataset.lazyBound = '1';
-        coverLoadObserver.observe(el);
+function initBookCardCovers(root = document) {
+    root.querySelectorAll('.book-card__cover').forEach(cover => {
+        const media = cover.querySelector('.book-card__media');
+        if (media) fitCoverToMedia(cover, media);
     });
+}
+
+function initModalCover(isVideo) {
+    const cover = document.querySelector('.modal__cover');
+    if (!cover) return;
+    const media = isVideo ? modalMedia : modalFallback;
+    if (media.src) fitCoverToMedia(cover, media);
 }
 
 // ===== Динамический рендер книг с пагинацией =====
@@ -116,7 +99,13 @@ function renderBookCards() {
     const visible = booksData.slice(0, booksShown);
     grid.innerHTML = visible.map(book => {
         const cover = book.cover || '';
-        const mediaHtml = cover ? bookCoverMediaHtml(cover, book.title) : '';
+        const isVideo = cover.endsWith('.mp4') || cover.endsWith('.webm');
+        let mediaHtml = '';
+        if (isVideo) {
+            mediaHtml = `<video class="book-card__media" autoplay muted loop playsinline><source src="${escAttr(cover)}" type="video/mp4"></video>`;
+        } else if (cover) {
+            mediaHtml = `<img class="book-card__media" src="${escAttr(cover)}" alt="${escAttr(book.title)}" loading="lazy" decoding="async">`;
+        }
         const badgeHtml = book.badge
             ? `<span class="book-card__badge${book.badge === 'Бестселлер' ? ' book-card__badge--gold' : ''}${book.badge === 'Бесплатно' ? ' book-card__badge--free' : ''}${book.badge === 'Эксклюзив' ? ' book-card__badge--exclusive' : ''}">${escHtml(book.badge)}</span>`
             : '';
@@ -135,7 +124,7 @@ function renderBookCards() {
         </article>`;
     }).join('');
 
-    initCoverLazyLoad(grid);
+    initBookCardCovers(grid);
 
     // Показать/скрыть кнопку «Загрузить ещё»
     if (loadMoreWrap) {
@@ -225,11 +214,10 @@ function openBook(id) {
     } else {
         modalMedia.style.display = 'none';
         modalFallback.style.display = '';
-        modalFallback.decoding = 'async';
-        modalFallback.loading = 'eager';
         modalFallback.src = cover;
         modalFallback.alt = book.title;
     }
+    initModalCover(isVideo);
 
     linkLitnet.href = book.litnet || 'https://litnet.com/';
     linkLitnet.style.display = book.litnet ? '' : 'none';

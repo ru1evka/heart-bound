@@ -4,6 +4,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const multer = require('multer');
 const { createClient } = require('@libsql/client');
+const { optimizeUploadedImage } = require('./lib/image-optimize');
 
 const PORT = process.env.PORT || 3000;
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data.db');
@@ -155,7 +156,7 @@ async function seedSettings() {
         contact_email: '', author_name: 'Рена Руд',
         author_text1: 'Мой писательский путь начался чуть больше года назад.',
         author_text2: 'Пишу молодёжные, современные и женские романы с уклоном в драму.',
-        author_photo: 'assets/avatar_2_kopia.png'
+        author_photo: 'assets/avatar_2_kopia.webp'
     };
     for (const [key, value] of Object.entries(defaults)) {
         await db.execute({ sql: `INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`, args: [key, value] });
@@ -356,10 +357,16 @@ app.put('/api/settings', authMiddleware, requireDB, async (req, res) => {
 
 // ===== API: Загрузка файлов =====
 app.post('/api/upload', authMiddleware, (req, res) => {
-    upload.single('file')(req, res, (err) => {
+    upload.single('file')(req, res, async (err) => {
         if (err) return res.status(400).json({ error: err.message || 'Ошибка загрузки' });
         if (!req.file) return res.status(400).json({ error: 'Файл не выбран' });
-        res.json({ success: true, url: '/uploads/' + req.file.filename, filename: req.file.filename });
+        let filename = req.file.filename;
+        try {
+            filename = await optimizeUploadedImage(path.join(UPLOADS_DIR, filename));
+        } catch (convErr) {
+            console.error('WebP conversion:', convErr.message);
+        }
+        res.json({ success: true, url: '/uploads/' + filename, filename });
     });
 });
 
@@ -367,12 +374,7 @@ app.use('/uploads', express.static(UPLOADS_DIR, {
     maxAge: '30d',
     etag: true,
     lastModified: true,
-    immutable: true,
-    setHeaders: (res, filePath) => {
-        if (/\.gif$/i.test(filePath)) {
-            res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
-        }
-    }
+    immutable: true
 }));
 
 app.delete('/api/upload/:filename', authMiddleware, (req, res) => {

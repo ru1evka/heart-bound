@@ -290,6 +290,7 @@ h1, h2, h3, h4 {
 }
 .book-card__cover {
     position: relative;
+    width: 100%;
     aspect-ratio: 3 / 4;
     overflow: hidden;
     display: flex;
@@ -300,10 +301,9 @@ h1, h2, h3, h4 {
 .book-card__media {
     width: 100%;
     height: 100%;
-    max-width: 100%;
-    max-height: 100%;
     object-fit: contain;
     object-position: center;
+    display: block;
 }
 .book-card__cover::after {
     content: '';
@@ -635,16 +635,17 @@ h1, h2, h3, h4 {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 360px;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    min-height: 240px;
 }
 .modal__media,
 .modal__fallback {
     width: 100%;
     height: 100%;
-    max-width: 100%;
-    max-height: min(70vh, 520px);
     object-fit: contain;
     object-position: center;
+    display: block;
 }
 .modal__body {
     padding: 50px 40px;
@@ -709,7 +710,7 @@ body.no-scroll { overflow: hidden; }
     .tg-qr { grid-template-columns: 1fr; padding: 40px 30px; text-align: center; }
     .footer__inner { grid-template-columns: 1fr 1fr; }
     .modal__dialog { grid-template-columns: 1fr; }
-    .modal__cover { aspect-ratio: 4/3; }
+    .modal__cover { min-height: 220px; }
     .modal__body { padding: 30px 24px; }
 }
 @media (max-width: 600px) {
@@ -719,6 +720,8 @@ body.no-scroll { overflow: hidden; }
     .book-grid { grid-template-columns: 1fr; }
     .modal__body h2 { font-size: 28px; }
 }
+
+.book-card__badge { z-index: 2; }
 
 /* ===== Ссылка на админку в футере ===== */
 .footer__admin {
