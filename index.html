@@ -165,15 +165,19 @@
 <!-- ===== Модальное окно с прологом ===== -->
 <div class="modal" id="modal" aria-hidden="true">
     <div class="modal__backdrop" data-close></div>
-    <div class="modal__dialog" role="dialog" aria-modal="true">
+    <div class="modal__dialog modal__dialog--book" role="dialog" aria-modal="true">
         <button class="modal__close" data-close aria-label="Закрыть">×</button>
-        <div class="modal__cover">
-            <video class="modal__media" autoplay muted loop playsinline id="modalMedia"></video>
-            <img class="modal__fallback" id="modalFallback" alt="">
-        </div>
+        <header class="modal__hero">
+            <div class="modal__cover-wrap" id="modalCoverWrap">
+                <video class="modal__media" autoplay muted loop playsinline id="modalMedia"></video>
+                <img class="modal__fallback" id="modalFallback" alt="">
+            </div>
+            <div class="modal__head">
+                <p class="modal__genre" id="modalGenre"></p>
+                <h2 id="modalTitle"></h2>
+            </div>
+        </header>
         <div class="modal__body">
-            <p class="modal__genre" id="modalGenre"></p>
-            <h2 id="modalTitle"></h2>
             <h3 class="modal__prologue-title">Аннотация</h3>
             <div class="modal__prologue" id="modalPrologue"></div>
             <div class="modal__buy">

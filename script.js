@@ -77,12 +77,7 @@ function initBookCardCovers(root = document) {
     });
 }
 
-function initModalCover(isVideo) {
-    const cover = document.querySelector('.modal__cover');
-    if (!cover) return;
-    const media = isVideo ? modalMedia : modalFallback;
-    if (media.src) fitCoverToMedia(cover, media);
-}
+const modalCoverWrap = document.getElementById('modalCoverWrap');
 
 // ===== Динамический рендер книг с пагинацией =====
 function renderBookCards() {
@@ -206,18 +201,28 @@ function openBook(id) {
 
     const cover = book.cover || '';
     const isVideo = cover.endsWith('.mp4') || cover.endsWith('.webm');
-    if (isVideo) {
+    if (modalCoverWrap) modalCoverWrap.style.background = book.color || '#9a3f55';
+    if (!cover) {
+        modalMedia.style.display = 'none';
+        modalMedia.removeAttribute('src');
+        modalFallback.style.display = 'none';
+        modalFallback.removeAttribute('src');
+        if (modalCoverWrap) modalCoverWrap.style.display = 'none';
+    } else if (isVideo) {
+        if (modalCoverWrap) modalCoverWrap.style.display = '';
         modalMedia.style.display = '';
         modalMedia.src = cover;
         modalMedia.load();
         modalFallback.style.display = 'none';
+        modalFallback.removeAttribute('src');
     } else {
+        if (modalCoverWrap) modalCoverWrap.style.display = '';
         modalMedia.style.display = 'none';
+        modalMedia.removeAttribute('src');
         modalFallback.style.display = '';
         modalFallback.src = cover;
         modalFallback.alt = book.title;
     }
-    initModalCover(isVideo);
 
     linkLitnet.href = book.litnet || 'https://litnet.com/';
     linkLitnet.style.display = book.litnet ? '' : 'none';
