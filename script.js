@@ -52,6 +52,55 @@ async function loadSettings() {
     renderAuthor();
 }
 
+// ===== Ленивая загрузка обложек (GIF/видео не грузятся до появления в viewport) =====
+const coverLoadObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        const el = entry.target;
+        const url = el.dataset.src;
+        if (entry.isIntersecting) {
+            if (url) {
+                if (el.tagName === 'VIDEO') {
+                    el.innerHTML = `<source src="${escAttr(url)}" type="video/mp4">`;
+                    el.preload = 'auto';
+                    el.load();
+                    el.play().catch(() => {});
+                    delete el.dataset.src;
+                } else {
+                    el.src = url;
+                    delete el.dataset.src;
+                }
+            }
+            if (el.tagName === 'VIDEO' && el.querySelector('source')) el.play().catch(() => {});
+        } else {
+            if (el.tagName === 'VIDEO') {
+                el.pause();
+            } else if (el.tagName === 'IMG' && el.src && /\.gif$/i.test(el.src)) {
+                el.dataset.src = el.src;
+                el.removeAttribute('src');
+            }
+        }
+    });
+}, { rootMargin: '120px', threshold: 0.01 });
+
+function bookCoverMediaHtml(cover, title) {
+    if (!cover) return '';
+    const isVideo = /\.(mp4|webm)$/i.test(cover);
+    if (isVideo) {
+        return `<video class="book-card__media" muted loop playsinline preload="none" data-src="${escAttr(cover)}" aria-label="${escAttr(title)}"></video>`;
+    }
+    return `<img class="book-card__media" data-src="${escAttr(cover)}" alt="${escAttr(title)}" decoding="async" loading="lazy">`;
+}
+
+function initCoverLazyLoad(root = document) {
+    root.querySelectorAll('.book-card__media[data-src], .book-card__media[src], .book-card__media source').forEach(el => {
+        if (el.tagName === 'SOURCE') el = el.closest('.book-card__media');
+        if (!el) return;
+        if (el.dataset.lazyBound) return;
+        el.dataset.lazyBound = '1';
+        coverLoadObserver.observe(el);
+    });
+}
+
 // ===== Динамический рендер книг с пагинацией =====
 function renderBookCards() {
     const grid = document.querySelector('.book-grid');
@@ -67,13 +116,7 @@ function renderBookCards() {
     const visible = booksData.slice(0, booksShown);
     grid.innerHTML = visible.map(book => {
         const cover = book.cover || '';
-        const isVideo = cover.endsWith('.mp4') || cover.endsWith('.webm');
-        let mediaHtml = '';
-        if (isVideo) {
-            mediaHtml = `<video class="book-card__media" autoplay muted loop playsinline><source src="${escAttr(cover)}" type="video/mp4"></video>`;
-        } else if (cover) {
-            mediaHtml = `<img class="book-card__media" src="${escAttr(cover)}" alt="${escAttr(book.title)}">`;
-        }
+        const mediaHtml = cover ? bookCoverMediaHtml(cover, book.title) : '';
         const badgeHtml = book.badge
             ? `<span class="book-card__badge${book.badge === 'Бестселлер' ? ' book-card__badge--gold' : ''}${book.badge === 'Бесплатно' ? ' book-card__badge--free' : ''}${book.badge === 'Эксклюзив' ? ' book-card__badge--exclusive' : ''}">${escHtml(book.badge)}</span>`
             : '';
@@ -91,6 +134,8 @@ function renderBookCards() {
             </div>
         </article>`;
     }).join('');
+
+    initCoverLazyLoad(grid);
 
     // Показать/скрыть кнопку «Загрузить ещё»
     if (loadMoreWrap) {
@@ -180,6 +225,8 @@ function openBook(id) {
     } else {
         modalMedia.style.display = 'none';
         modalFallback.style.display = '';
+        modalFallback.decoding = 'async';
+        modalFallback.loading = 'eager';
         modalFallback.src = cover;
         modalFallback.alt = book.title;
     }

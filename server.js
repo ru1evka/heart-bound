@@ -240,7 +240,9 @@ app.use(express.static(__dirname, {
     setHeaders: (res, filePath) => {
         if (filePath.endsWith('.html')) { res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate'); }
         else if (filePath.endsWith('.css') || filePath.endsWith('.js')) { res.setHeader('Cache-Control', 'no-cache, must-revalidate'); }
-        else if (/\.(jpg|jpeg|png|gif|svg|webp|mp4|webm|ico)$/i.test(filePath)) { res.setHeader('Cache-Control', 'public, max-age=86400'); }
+        else if (/\.(jpg|jpeg|png|gif|svg|webp|mp4|webm|ico)$/i.test(filePath)) {
+            res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+        }
     }
 }));
 
@@ -361,7 +363,17 @@ app.post('/api/upload', authMiddleware, (req, res) => {
     });
 });
 
-app.use('/uploads', express.static(UPLOADS_DIR, { maxAge: '7d' }));
+app.use('/uploads', express.static(UPLOADS_DIR, {
+    maxAge: '30d',
+    etag: true,
+    lastModified: true,
+    immutable: true,
+    setHeaders: (res, filePath) => {
+        if (/\.gif$/i.test(filePath)) {
+            res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+        }
+    }
+}));
 
 app.delete('/api/upload/:filename', authMiddleware, (req, res) => {
     const filepath = path.join(UPLOADS_DIR, req.params.filename);
