@@ -40,6 +40,15 @@ async function uploadFile(file) {
     return res.json();
 }
 
+function normalizeAdminImageUrl(url) {
+    if (!url) return '';
+    const trimmed = String(url).trim();
+    if (/^assets\/.+\.(jpe?g|png|gif)$/i.test(trimmed) || /^\/uploads\/.+\.(jpe?g|png|gif)$/i.test(trimmed)) {
+        return trimmed.replace(/\.(jpe?g|png|gif)(\?.*)?$/i, '.webp$2');
+    }
+    return trimmed;
+}
+
 function getBookAgeRating(book) {
     return (book && (book.age_rating ?? book.ageRating ?? '')) || '';
 }
@@ -374,8 +383,9 @@ authorFileInput.addEventListener('change', async () => {
     authorUploadBtn.textContent = 'Загрузить фото';
     authorUploadBtn.disabled = false;
     if (result.success) {
-        authorPhotoHidden.value = result.url;
-        authorPreview.innerHTML = `<img src="${escAttr(result.url)}" style="max-height:100px;border-radius:8px" alt="Author">`;
+        const photoUrl = normalizeAdminImageUrl(result.url);
+        authorPhotoHidden.value = photoUrl;
+        authorPreview.innerHTML = `<img src="${escAttr(photoUrl)}" style="max-height:100px;border-radius:8px" alt="Author">`;
         authorRemoveBtn.style.display = '';
     } else {
         alert('Ошибка: ' + (result.error || 'не удалось загрузить'));
@@ -411,10 +421,14 @@ function fillSettingsForm() {
         qrRemoveBtn.style.display = '';
     }
     // Author photo
-    authorPhotoHidden.value = settingsData.author_photo || '';
-    if (settingsData.author_photo) {
-        authorPreview.innerHTML = `<img src="${escAttr(settingsData.author_photo)}" style="max-height:100px;border-radius:8px" alt="Author">`;
+    const authorPhotoUrl = normalizeAdminImageUrl(settingsData.author_photo || '');
+    authorPhotoHidden.value = authorPhotoUrl;
+    if (authorPhotoUrl) {
+        authorPreview.innerHTML = `<img src="${escAttr(authorPhotoUrl)}" style="max-height:100px;border-radius:8px" alt="Author">`;
         authorRemoveBtn.style.display = '';
+    } else {
+        authorPreview.innerHTML = '';
+        authorRemoveBtn.style.display = 'none';
     }
 }
 
@@ -437,12 +451,12 @@ document.getElementById('settingsForm').addEventListener('submit', async e => {
         author_name: document.getElementById('sAuthorName').value.trim(),
         author_text1: document.getElementById('sAuthorText1').value.trim(),
         author_text2: document.getElementById('sAuthorText2').value.trim(),
-        author_photo: authorPhotoHidden.value
+        author_photo: normalizeAdminImageUrl(authorPhotoHidden.value)
     };
     const result = await apiFetch('/api/settings', { method: 'PUT', body: JSON.stringify(body) });
     if (result.success) {
         alert('Настройки сохранены!');
-        settingsData = body;
+        await loadSettings();
     } else {
         alert('Ошибка: ' + (result.error || 'не удалось сохранить'));
     }

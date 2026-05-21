@@ -4,7 +4,9 @@ const fs = require('fs');
 const crypto = require('crypto');
 const multer = require('multer');
 const { createClient } = require('@libsql/client');
-const { optimizeUploadedImage } = require('./lib/image-optimize');
+const { optimizeUploadedImage, normalizeImageUrl } = require('./lib/image-optimize');
+
+const IMAGE_SETTING_KEYS = new Set(['author_photo', 'qr_image']);
 
 const PORT = process.env.PORT || 3000;
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data.db');
@@ -342,7 +344,17 @@ app.get('/api/settings', requireDB, async (req, res) => {
     try {
         const result = await db.execute('SELECT key, value FROM settings');
         const settings = {};
-        result.rows.forEach(r => { settings[r.key] = r.value; });
+        for (const r of result.rows) {
+            let value = r.value || '';
+            if (IMAGE_SETTING_KEYS.has(r.key)) {
+                const normalized = normalizeImageUrl(value);
+                if (normalized !== value) {
+                    value = normalized;
+                    await db.execute({ sql: 'UPDATE settings SET value = ? WHERE key = ?', args: [normalized, r.key] });
+                }
+            }
+            settings[r.key] = value;
+        }
         res.json(settings);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -351,7 +363,8 @@ app.put('/api/settings', authMiddleware, requireDB, async (req, res) => {
     try {
         const settings = req.body;
         for (const [key, value] of Object.entries(settings)) {
-            await db.execute({ sql: `INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`, args: [key, value || ''] });
+            const stored = IMAGE_SETTING_KEYS.has(key) ? normalizeImageUrl(value || '') : (value || '');
+            await db.execute({ sql: `INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`, args: [key, stored] });
         }
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }

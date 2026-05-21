@@ -449,16 +449,48 @@ function renderFooterLinks() {
 }
 
 // ===== Рендер блока «Об авторе» =====
+function normalizeImageUrl(url) {
+    if (!url) return '';
+    const trimmed = String(url).trim();
+    if (/^assets\/.+\.(jpe?g|png|gif)$/i.test(trimmed) || /^\/uploads\/.+\.(jpe?g|png|gif)$/i.test(trimmed)) {
+        return trimmed.replace(/\.(jpe?g|png|gif)(\?.*)?$/i, '.webp$2');
+    }
+    return trimmed;
+}
+
 function renderAuthor() {
     const nameEl = document.getElementById('authorName');
     const text1El = document.getElementById('authorText1');
     const text2El = document.getElementById('authorText2');
     const photoEl = document.getElementById('authorPhoto');
+    const fallbackEl = document.querySelector('.about__photo-fallback');
 
     if (nameEl && siteSettings.author_name) nameEl.textContent = siteSettings.author_name;
     if (text1El && siteSettings.author_text1) text1El.textContent = siteSettings.author_text1;
     if (text2El && siteSettings.author_text2) text2El.textContent = siteSettings.author_text2;
-    if (photoEl && siteSettings.author_photo) photoEl.src = siteSettings.author_photo;
+
+    if (!photoEl) return;
+
+    const url = normalizeImageUrl(siteSettings.author_photo);
+    photoEl.onload = () => {
+        photoEl.style.display = 'block';
+        if (fallbackEl) fallbackEl.style.display = 'none';
+    };
+    photoEl.onerror = () => {
+        photoEl.style.display = 'none';
+        if (fallbackEl) fallbackEl.style.display = 'flex';
+    };
+
+    if (!url) {
+        photoEl.removeAttribute('src');
+        photoEl.style.display = 'none';
+        if (fallbackEl) fallbackEl.style.display = 'flex';
+        return;
+    }
+
+    photoEl.style.display = 'block';
+    if (fallbackEl) fallbackEl.style.display = 'none';
+    photoEl.src = url;
 }
 
 // ===== Плавное появление при скролле =====

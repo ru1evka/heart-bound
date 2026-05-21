@@ -403,12 +403,18 @@ h1, h2, h3, h4 {
     margin: 0 auto;
 }
 .about__photo-frame img {
-    width: 100%; height: 100%; object-fit: cover;
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 .about__photo-fallback {
     position: absolute;
     inset: 0;
-    display: flex;
+    z-index: 0;
+    display: none;
     align-items: center;
     justify-content: center;
     color: #fff;
