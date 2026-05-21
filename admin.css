@@ -194,11 +194,10 @@ body {
     margin-left: 8px;
 }
 .admin-card__info .badge--age {
-    background: var(--ink);
+    background: var(--rose-deep);
     color: #fff;
-    text-transform: none;
-    letter-spacing: 0;
-    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 .admin-card__actions {
     display: flex;

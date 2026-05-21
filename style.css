@@ -327,36 +327,31 @@ h1, h2, h3, h4 {
 .book-card__badge--gold { background: var(--gold); color: var(--ink); }
 .book-card__badge--free { background: #27ae60; color: #fff; }
 .book-card__badge--exclusive { background: linear-gradient(135deg, #8e44ad, #c0392b); color: #fff; }
-.book-card__age {
+.book-card__badges {
     position: absolute;
-    bottom: 14px;
-    right: 14px;
+    top: 16px;
+    left: 16px;
     z-index: 2;
-    min-width: 38px;
-    height: 38px;
-    padding: 0 10px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(42, 26, 46, 0.9);
-    color: #fff;
-    font-size: 14px;
-    font-weight: 700;
-    font-family: 'Manrope', sans-serif;
-    letter-spacing: 0;
-    border-radius: 8px;
-    border: 2px solid rgba(255, 255, 255, 0.45);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
     pointer-events: none;
 }
-.book-card__age--0 { background: #5a8f6a; }
-.book-card__age--6 { background: #4a7ab8; }
-.book-card__age--12 { background: #d4a017; color: var(--ink); border-color: rgba(42, 26, 46, 0.2); }
-.book-card__age--16 { background: #8e44ad; }
-.book-card__age--18 { background: #b91c1c; border-color: #fff; }
-.modal__cover-wrap .book-card__age {
-    bottom: 10px;
-    right: 10px;
+.book-card__badges .book-card__badge {
+    position: static;
+    top: auto;
+    left: auto;
+}
+.book-card__badge--age {
+    background: var(--rose-deep);
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+.modal__cover-wrap .book-card__badges {
+    top: 12px;
+    left: 12px;
 }
 .book-card__body {
     padding: 24px;

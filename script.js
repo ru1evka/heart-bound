@@ -82,8 +82,7 @@ const modalAge = document.getElementById('modalAge');
 
 function ageRatingHtml(rating) {
     if (!rating) return '';
-    const num = String(rating).replace('+', '');
-    return `<span class="book-card__age book-card__age--${escAttr(num)}" aria-label="Возрастное ограничение ${escAttr(rating)}">${escHtml(rating)}</span>`;
+    return `<span class="book-card__badge book-card__badge--age" aria-label="Возрастное ограничение ${escAttr(rating)}">${escHtml(rating)}</span>`;
 }
 
 function setModalAgeRating(rating) {
@@ -91,12 +90,10 @@ function setModalAgeRating(rating) {
     if (!rating) {
         modalAge.hidden = true;
         modalAge.textContent = '';
-        modalAge.className = 'book-card__age';
         return;
     }
-    const num = String(rating).replace('+', '');
     modalAge.textContent = rating;
-    modalAge.className = `book-card__age book-card__age--${num}`;
+    modalAge.className = 'book-card__badge book-card__badge--age';
     modalAge.setAttribute('aria-label', `Возрастное ограничение ${rating}`);
     modalAge.hidden = false;
 }
@@ -127,12 +124,13 @@ function renderBookCards() {
             ? `<span class="book-card__badge${book.badge === 'Бестселлер' ? ' book-card__badge--gold' : ''}${book.badge === 'Бесплатно' ? ' book-card__badge--free' : ''}${book.badge === 'Эксклюзив' ? ' book-card__badge--exclusive' : ''}">${escHtml(book.badge)}</span>`
             : '';
         const ageHtml = ageRatingHtml(book.age_rating);
+        const badgesInner = [badgeHtml, ageHtml].filter(Boolean).join('');
+        const badgesWrap = badgesInner ? `<div class="book-card__badges">${badgesInner}</div>` : '';
         return `
         <article class="book-card" data-book="${escAttr(book.id)}">
             <div class="book-card__cover" style="background: ${book.color || '#9a3f55'}">
                 ${mediaHtml}
-                ${badgeHtml}
-                ${ageHtml}
+                ${badgesWrap}
             </div>
             <div class="book-card__body">
                 <h3>${escHtml(book.title)}</h3>
@@ -220,6 +218,8 @@ function openBook(id) {
     if (!book) return;
     modalTitle.textContent = book.title;
     modalGenre.textContent = book.genre;
+    const modalBadges = document.getElementById('modalBadges');
+    if (modalBadges) modalBadges.style.display = book.age_rating ? '' : 'none';
     setModalAgeRating(book.age_rating || '');
 
     const paragraphs = (book.prologue || '').split(/\n\n+/).filter(Boolean).map(p => `<p>${escHtml(p)}</p>`).join('');
@@ -235,6 +235,8 @@ function openBook(id) {
         modalFallback.removeAttribute('src');
         if (modalCoverWrap) modalCoverWrap.style.display = 'none';
         if (modalAge) modalAge.hidden = true;
+        const modalBadges = document.getElementById('modalBadges');
+        if (modalBadges) modalBadges.style.display = 'none';
     } else if (isVideo) {
         if (modalCoverWrap) modalCoverWrap.style.display = '';
         modalMedia.style.display = '';
