@@ -344,11 +344,14 @@ h1, h2, h3, h4 {
     left: auto;
 }
 .book-card__badge--age {
-    background: var(--rose-deep);
-    color: #fff;
     text-transform: uppercase;
     letter-spacing: 2px;
 }
+.book-card__badge--age-0 { background: #5a8f6a; color: #fff; }
+.book-card__badge--age-6 { background: #4a7ab8; color: #fff; }
+.book-card__badge--age-12 { background: #d4a017; color: var(--ink); }
+.book-card__badge--age-16 { background: #8e44ad; color: #fff; }
+.book-card__badge--age-18 { background: #b91c1c; color: #fff; }
 .modal__cover-wrap .book-card__badges {
     top: 12px;
     left: 12px;

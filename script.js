@@ -82,7 +82,8 @@ const modalAge = document.getElementById('modalAge');
 
 function ageRatingHtml(rating) {
     if (!rating) return '';
-    return `<span class="book-card__badge book-card__badge--age" aria-label="Возрастное ограничение ${escAttr(rating)}">${escHtml(rating)}</span>`;
+    const num = String(rating).replace('+', '');
+    return `<span class="book-card__badge book-card__badge--age book-card__badge--age-${escAttr(num)}" aria-label="Возрастное ограничение ${escAttr(rating)}">${escHtml(rating)}</span>`;
 }
 
 function setModalAgeRating(rating) {
@@ -90,10 +91,12 @@ function setModalAgeRating(rating) {
     if (!rating) {
         modalAge.hidden = true;
         modalAge.textContent = '';
+        modalAge.className = 'book-card__badge book-card__badge--age';
         return;
     }
+    const num = String(rating).replace('+', '');
     modalAge.textContent = rating;
-    modalAge.className = 'book-card__badge book-card__badge--age';
+    modalAge.className = `book-card__badge book-card__badge--age book-card__badge--age-${num}`;
     modalAge.setAttribute('aria-label', `Возрастное ограничение ${rating}`);
     modalAge.hidden = false;
 }

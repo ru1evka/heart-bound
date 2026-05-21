@@ -193,12 +193,41 @@ body {
     border-radius: 50px;
     margin-left: 8px;
 }
-.admin-card__info .badge--age {
-    background: var(--rose-deep);
-    color: #fff;
+.admin-card__meta {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.admin-card__age-none {
+    color: var(--ink-soft);
+    font-style: italic;
+}
+.age-rating-preview {
+    margin-top: 10px;
+    min-height: 28px;
+    display: flex;
+    align-items: center;
+}
+.age-rating-preview__empty {
+    font-size: 13px;
+    color: var(--ink-soft);
+    font-style: italic;
+}
+.badge--age,
+.book-card__badge--age {
     text-transform: uppercase;
     letter-spacing: 1px;
+    font-weight: 600;
 }
+.badge--age-0, .book-card__badge--age-0 { background: #5a8f6a; color: #fff; }
+.badge--age-6, .book-card__badge--age-6 { background: #4a7ab8; color: #fff; }
+.badge--age-12, .book-card__badge--age-12 { background: #d4a017; color: var(--ink); }
+.badge--age-16, .book-card__badge--age-16 { background: #8e44ad; color: #fff; }
+.badge--age-18, .book-card__badge--age-18 { background: #b91c1c; color: #fff; }
 .admin-card__actions {
     display: flex;
     gap: 8px;

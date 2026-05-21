@@ -40,8 +40,35 @@ async function uploadFile(file) {
     return res.json();
 }
 
+function getBookAgeRating(book) {
+    return (book && (book.age_rating ?? book.ageRating ?? '')) || '';
+}
+
+function ageRatingNum(rating) {
+    return String(rating || '').replace('+', '');
+}
+
+function ageRatingBadgeHtml(rating) {
+    if (!rating) return '';
+    const num = ageRatingNum(rating);
+    return `<span class="badge badge--age badge--age-${num}">${escHtml(rating)}</span>`;
+}
+
+function updateAgeRatingPreview() {
+    const preview = document.getElementById('ageRatingPreview');
+    const select = document.getElementById('bookAgeRating');
+    if (!preview || !select) return;
+    const rating = select.value;
+    if (!rating) {
+        preview.innerHTML = '<span class="age-rating-preview__empty">Плашка не будет показана на сайте</span>';
+        return;
+    }
+    preview.innerHTML = ageRatingBadgeHtml(rating);
+}
+
 async function loadBooks() {
-    booksData = await apiFetch('/api/books');
+    const data = await apiFetch('/api/books');
+    booksData = Array.isArray(data) ? data : [];
     renderBooks();
 }
 
@@ -86,8 +113,9 @@ function renderBooks() {
     list.innerHTML = booksData.map(book => `
         <div class="admin-card">
             <div class="admin-card__info">
-                <h3>${escHtml(book.title)}${book.badge ? `<span class="badge">${escHtml(book.badge)}</span>` : ''}${book.age_rating ? `<span class="badge badge--age">${escHtml(book.age_rating)}</span>` : ''}</h3>
+                <h3>${escHtml(book.title)}${book.badge ? `<span class="badge">${escHtml(book.badge)}</span>` : ''}</h3>
                 <p>${escHtml(book.genre)} — ${escHtml(book.description || '')}</p>
+                <p class="admin-card__meta">Возраст: ${getBookAgeRating(book) ? ageRatingBadgeHtml(getBookAgeRating(book)) : '<span class="admin-card__age-none">не указано</span>'}</p>
             </div>
             <div class="admin-card__actions">
                 <button class="btn btn--ghost btn--small" onclick="editBook('${book.id}')">Редактировать</button>
@@ -184,7 +212,8 @@ function editBook(id) {
     document.getElementById('bookTitle').value = book.title;
     document.getElementById('bookGenre').value = book.genre || '';
     document.getElementById('bookBadge').value = book.badge || '';
-    document.getElementById('bookAgeRating').value = book.age_rating || '';
+    document.getElementById('bookAgeRating').value = getBookAgeRating(book);
+    updateAgeRatingPreview();
     document.getElementById('bookDesc').value = book.description || '';
     document.getElementById('bookPrologue').value = book.prologue || '';
     document.getElementById('bookLitnet').value = book.litnet || '';
@@ -241,7 +270,11 @@ function resetBookForm() {
     bookCoverUrl.value = '';
     coverPreview.innerHTML = '';
     coverRemoveBtn.style.display = 'none';
+    updateAgeRatingPreview();
 }
+
+document.getElementById('bookAgeRating')?.addEventListener('change', updateAgeRatingPreview);
+updateAgeRatingPreview();
 
 // ===== Посты: CRUD =====
 document.getElementById('addPostBtn').addEventListener('click', () => {
