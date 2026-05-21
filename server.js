@@ -67,6 +67,7 @@ async function initDB() {
             title TEXT NOT NULL,
             genre TEXT DEFAULT '',
             badge TEXT DEFAULT '',
+            age_rating TEXT DEFAULT '',
             description TEXT DEFAULT '',
             prologue TEXT DEFAULT '',
             litnet TEXT DEFAULT '',
@@ -96,7 +97,8 @@ async function initDB() {
         // Миграции для существующих БД
         const migrations = [
             `ALTER TABLE books ADD COLUMN litres TEXT DEFAULT ''`,
-            `ALTER TABLE books ADD COLUMN btn_type TEXT DEFAULT 'buy'`
+            `ALTER TABLE books ADD COLUMN btn_type TEXT DEFAULT 'buy'`,
+            `ALTER TABLE books ADD COLUMN age_rating TEXT DEFAULT ''`
         ];
         for (const sql of migrations) {
             try { await db.execute(sql); } catch (e) { /* уже есть */ }
@@ -265,23 +267,23 @@ app.get('/api/books/:id', requireDB, async (req, res) => {
 
 app.post('/api/books', authMiddleware, requireDB, async (req, res) => {
     try {
-        const { title, genre, badge, description, prologue, litnet, litgorod, litres, btn_type, cover, color } = req.body;
+        const { title, genre, badge, age_rating, description, prologue, litnet, litgorod, litres, btn_type, cover, color } = req.body;
         const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
         const maxResult = await db.execute('SELECT MAX(sort_order) as m FROM books');
         const maxOrder = maxResult.rows[0]?.m || 0;
-        await db.execute({ sql: `INSERT INTO books (id, title, genre, badge, description, prologue, litnet, litgorod, litres, btn_type, cover, color, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            args: [id, title||'', genre||'', badge||'', description||'', prologue||'', litnet||'', litgorod||'', litres||'', btn_type||'buy', cover||'', color||'#9a3f55', maxOrder+1] });
+        await db.execute({ sql: `INSERT INTO books (id, title, genre, badge, age_rating, description, prologue, litnet, litgorod, litres, btn_type, cover, color, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            args: [id, title||'', genre||'', badge||'', age_rating||'', description||'', prologue||'', litnet||'', litgorod||'', litres||'', btn_type||'buy', cover||'', color||'#9a3f55', maxOrder+1] });
         res.json({ id, success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.put('/api/books/:id', authMiddleware, requireDB, async (req, res) => {
     try {
-        const { title, genre, badge, description, prologue, litnet, litgorod, litres, btn_type, cover, color } = req.body;
+        const { title, genre, badge, age_rating, description, prologue, litnet, litgorod, litres, btn_type, cover, color } = req.body;
         const cur = (await db.execute({ sql: 'SELECT * FROM books WHERE id = ?', args: [req.params.id] })).rows[0];
         if (!cur) return res.status(404).json({ error: 'Not found' });
-        await db.execute({ sql: `UPDATE books SET title=?, genre=?, badge=?, description=?, prologue=?, litnet=?, litgorod=?, litres=?, btn_type=?, cover=?, color=? WHERE id=?`,
-            args: [title!==undefined?title:cur.title, genre!==undefined?genre:cur.genre, badge!==undefined?badge:cur.badge, description!==undefined?description:cur.description, prologue!==undefined?prologue:cur.prologue, litnet!==undefined?litnet:cur.litnet, litgorod!==undefined?litgorod:cur.litgorod, litres!==undefined?litres:cur.litres, btn_type!==undefined?btn_type:(cur.btn_type||'buy'), cover!==undefined?cover:cur.cover, color!==undefined?color:(cur.color||'#9a3f55'), req.params.id] });
+        await db.execute({ sql: `UPDATE books SET title=?, genre=?, badge=?, age_rating=?, description=?, prologue=?, litnet=?, litgorod=?, litres=?, btn_type=?, cover=?, color=? WHERE id=?`,
+            args: [title!==undefined?title:cur.title, genre!==undefined?genre:cur.genre, badge!==undefined?badge:cur.badge, age_rating!==undefined?age_rating:(cur.age_rating||''), description!==undefined?description:cur.description, prologue!==undefined?prologue:cur.prologue, litnet!==undefined?litnet:cur.litnet, litgorod!==undefined?litgorod:cur.litgorod, litres!==undefined?litres:cur.litres, btn_type!==undefined?btn_type:(cur.btn_type||'buy'), cover!==undefined?cover:cur.cover, color!==undefined?color:(cur.color||'#9a3f55'), req.params.id] });
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });

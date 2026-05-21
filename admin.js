@@ -86,7 +86,7 @@ function renderBooks() {
     list.innerHTML = booksData.map(book => `
         <div class="admin-card">
             <div class="admin-card__info">
-                <h3>${escHtml(book.title)}${book.badge ? `<span class="badge">${escHtml(book.badge)}</span>` : ''}</h3>
+                <h3>${escHtml(book.title)}${book.badge ? `<span class="badge">${escHtml(book.badge)}</span>` : ''}${book.age_rating ? `<span class="badge badge--age">${escHtml(book.age_rating)}</span>` : ''}</h3>
                 <p>${escHtml(book.genre)} — ${escHtml(book.description || '')}</p>
             </div>
             <div class="admin-card__actions">
@@ -184,6 +184,7 @@ function editBook(id) {
     document.getElementById('bookTitle').value = book.title;
     document.getElementById('bookGenre').value = book.genre || '';
     document.getElementById('bookBadge').value = book.badge || '';
+    document.getElementById('bookAgeRating').value = book.age_rating || '';
     document.getElementById('bookDesc').value = book.description || '';
     document.getElementById('bookPrologue').value = book.prologue || '';
     document.getElementById('bookLitnet').value = book.litnet || '';
@@ -213,6 +214,7 @@ document.getElementById('bookForm').addEventListener('submit', async e => {
         title: document.getElementById('bookTitle').value.trim(),
         genre: document.getElementById('bookGenre').value.trim(),
         badge: document.getElementById('bookBadge').value,
+        age_rating: document.getElementById('bookAgeRating').value,
         description: document.getElementById('bookDesc').value.trim(),
         prologue: document.getElementById('bookPrologue').value.trim(),
         litnet: document.getElementById('bookLitnet').value.trim(),

@@ -78,6 +78,28 @@ function initBookCardCovers(root = document) {
 }
 
 const modalCoverWrap = document.getElementById('modalCoverWrap');
+const modalAge = document.getElementById('modalAge');
+
+function ageRatingHtml(rating) {
+    if (!rating) return '';
+    const num = String(rating).replace('+', '');
+    return `<span class="book-card__age book-card__age--${escAttr(num)}" aria-label="Возрастное ограничение ${escAttr(rating)}">${escHtml(rating)}</span>`;
+}
+
+function setModalAgeRating(rating) {
+    if (!modalAge) return;
+    if (!rating) {
+        modalAge.hidden = true;
+        modalAge.textContent = '';
+        modalAge.className = 'book-card__age';
+        return;
+    }
+    const num = String(rating).replace('+', '');
+    modalAge.textContent = rating;
+    modalAge.className = `book-card__age book-card__age--${num}`;
+    modalAge.setAttribute('aria-label', `Возрастное ограничение ${rating}`);
+    modalAge.hidden = false;
+}
 
 // ===== Динамический рендер книг с пагинацией =====
 function renderBookCards() {
@@ -104,11 +126,13 @@ function renderBookCards() {
         const badgeHtml = book.badge
             ? `<span class="book-card__badge${book.badge === 'Бестселлер' ? ' book-card__badge--gold' : ''}${book.badge === 'Бесплатно' ? ' book-card__badge--free' : ''}${book.badge === 'Эксклюзив' ? ' book-card__badge--exclusive' : ''}">${escHtml(book.badge)}</span>`
             : '';
+        const ageHtml = ageRatingHtml(book.age_rating);
         return `
         <article class="book-card" data-book="${escAttr(book.id)}">
             <div class="book-card__cover" style="background: ${book.color || '#9a3f55'}">
                 ${mediaHtml}
                 ${badgeHtml}
+                ${ageHtml}
             </div>
             <div class="book-card__body">
                 <h3>${escHtml(book.title)}</h3>
@@ -196,6 +220,7 @@ function openBook(id) {
     if (!book) return;
     modalTitle.textContent = book.title;
     modalGenre.textContent = book.genre;
+    setModalAgeRating(book.age_rating || '');
 
     const paragraphs = (book.prologue || '').split(/\n\n+/).filter(Boolean).map(p => `<p>${escHtml(p)}</p>`).join('');
     modalPrologue.innerHTML = paragraphs;
@@ -209,6 +234,7 @@ function openBook(id) {
         modalFallback.style.display = 'none';
         modalFallback.removeAttribute('src');
         if (modalCoverWrap) modalCoverWrap.style.display = 'none';
+        if (modalAge) modalAge.hidden = true;
     } else if (isVideo) {
         if (modalCoverWrap) modalCoverWrap.style.display = '';
         modalMedia.style.display = '';
