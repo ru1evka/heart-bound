@@ -656,10 +656,27 @@ h1, h2, h3, h4 {
     font-size: clamp(26px, 5vw, 34px);
     font-style: italic;
     line-height: 1.2;
-    margin: 0;
+    margin: 0 0 18px;
+}
+.modal__dialog--book .modal__head .modal__buy {
+    margin-top: 0;
+    border-top: none;
+    padding-top: 0;
+}
+.modal__dialog--book .modal__buy-hint {
+    margin-bottom: 12px;
+    color: var(--ink-soft);
+    font-size: 13px;
+    line-height: 1.4;
+}
+.modal__dialog--book .modal__buy-row {
+    gap: 8px;
 }
 .modal__dialog--book .modal__body {
     padding: 28px 44px 40px;
+}
+.modal__dialog--book .modal__prologue {
+    margin-bottom: 0;
 }
 @keyframes pop { from { transform: scale(.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 .modal__close {
@@ -748,6 +765,9 @@ body.no-scroll { overflow: hidden; }
     }
     .modal__dialog--book .modal__cover-wrap {
         width: min(72vw, 220px);
+    }
+    .modal__dialog--book .modal__buy-row {
+        justify-content: center;
     }
     .modal__dialog--book .modal__body {
         padding: 24px 24px 32px;

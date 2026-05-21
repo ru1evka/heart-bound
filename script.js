@@ -189,6 +189,7 @@ const modalFallback = document.getElementById('modalFallback');
 const linkLitnet = document.getElementById('linkLitnet');
 const linkLitgorod = document.getElementById('linkLitgorod');
 const linkLitres = document.getElementById('linkLitres');
+const modalBuy = document.getElementById('modalBuy');
 
 function openBook(id) {
     const book = booksData.find(b => b.id === id || b.id === String(id));
@@ -229,7 +230,6 @@ function openBook(id) {
     linkLitgorod.href = book.litgorod || 'https://litgorod.ru/';
     linkLitgorod.style.display = book.litgorod ? '' : 'none';
 
-    // Литрес
     if (linkLitres) {
         if (book.litres) {
             linkLitres.href = book.litres;
@@ -239,12 +239,14 @@ function openBook(id) {
         }
     }
 
-    // Текст кнопок: «Купить» или «Читать бесплатно»
     const isFree = book.btn_type === 'free';
     const prefix = isFree ? 'Читать бесплатно на' : 'Купить на';
     linkLitnet.textContent = `${prefix} Литнет`;
     linkLitgorod.textContent = `${prefix} ЛитГород`;
     if (linkLitres) linkLitres.textContent = `${prefix} Литрес`;
+
+    const hasBuyLinks = book.litnet || book.litgorod || book.litres;
+    if (modalBuy) modalBuy.style.display = hasBuyLinks ? '' : 'none';
 
     modal.classList.add('is-open');
     modal.setAttribute('aria-hidden', 'false');
